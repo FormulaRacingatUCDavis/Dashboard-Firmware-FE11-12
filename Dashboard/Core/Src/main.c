@@ -43,7 +43,8 @@
 CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN PV */
-uint8_t switch_status = 0;
+uint8_t switches = 0;
+uint8_t debugMode = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
