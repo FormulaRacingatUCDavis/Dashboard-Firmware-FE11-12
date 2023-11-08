@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "can_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -136,7 +136,7 @@ int main(void)
 	  }
 
 	  // send driver switches
-	  can_send_switches(switches);
+	  can_send_switches(hcan1, switches);
 
 	  // this is where we actually display
 	  ADC_GLV_V_StartConvert();
