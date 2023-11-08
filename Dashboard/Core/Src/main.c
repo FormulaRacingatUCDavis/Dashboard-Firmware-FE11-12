@@ -43,7 +43,7 @@
 CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN PV */
-
+uint8_t switch_status = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -102,15 +102,107 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	  // check driver switches
+	  if (!HV_Read()) {
+		  switches |= 0b10;
+	  } else {
+		  switches &= 0b11111101;
+	  }
 
-    /* USER CODE BEGIN 3 */
+	  if (!Drive_Read()) {
+		  switches |= 0b1;
+	  } else {
+		  switches &= 0b11111110;
+	  }
+
+
+	  if (!Digital2_Read()) {
+		  if (debugMode) { // switch to drive mode
+			  debugMode = 0;
+	      }
+	      else { // switch to debug mode
+	    	  debugMode = 1;
+	      }
+	  }
+
+	  if (!Digital3_Read() || !Digital4_Read()) {
+		  if (switches & 0b100) { // switch to drive mode
+			  switches &= 0b11111011;
+		  }
+		  else { // switch to debug mode
+			  switches |= 0b100;
+		  }
+	  }
+
+	  // send driver switches
+	  can_send_switches(switches);
+
+	  // this is where we actually display
+	  ADC_GLV_V_StartConvert();
+	  uint32_t analog_1 = (int32_t)ADC_GLV_V_CountsTo_mVolts(0, ADC_GLV_V_GetResult16(0));
+	  torque_limit = analog_1 * 255/3300; // scale to 8 bit
+
+	  //uint32_t glv_v = (int32_t)ADC_GLV_V_CountsTo_mVolts(0, ADC_GLV_V_GetResult16(1));
+
+	  if (debugMode && prev_debugMode == 0){
+		  debugTemplate();
+	      clear_colors();
+	      prev_debugMode = 1;
+	  }
+	  if (!debugMode && prev_debugMode == 1) {
+		  clear_colors();
+	      driveTemplate();
+	      prev_debugMode = 0;
+	  }
+
+	  // big displays are usually 180 by 135
+	  // small displays are usually (60-90) by 30
+	  // need to adjust size of squares for changing fontSize
+
+	  if(debugMode){
+		  disp_SOC(soc, 10, 35, 240, 65, SMALL_FONT);
+	      disp_max_pack_temp(PACK_TEMP, 250, 35, 470, 65, SMALL_FONT);
+	      disp_state(state, 10, 100, 240, 130, SMALL_FONT);
+	      disp_mc_temp(mc_temp, 250, 100, 470, 130, SMALL_FONT);
+	      disp_glv_v(0, 10, 165, 240, 195, SMALL_FONT);
+	      disp_motor_temp(torque_limit, 250, 165, 470, 195, SMALL_FONT);
+	      disp_shutdown_circuit(shutdown_flags, 10, 230, 240, 260, SMALL_FONT);
+	      //disp_debug(debug_data, 250, 230, 470, 260, SMALL_FONT);
+	      disp_mc_fault(mc_fault_codes, 250, 230, 470, 260, SMALL_FONT);
+	  } else {
+		  disp_SOC(soc, 30, 35, 210, 170, BIG_FONT);
+	      disp_max_pack_temp(PACK_TEMP, 270, 35, 450, 170, BIG_FONT);
+	      disp_state(state, 20, 200, 200, 230, SMALL_FONT);
+	      disp_glv_v(0, 290, 200, 470, 230, SMALL_FONT);
+	  }
+
+
+	  /*      END display latest data         */
+
+	  if (state == DRIVE && previous_state == HV_ENABLED) {
+		  // entered drive; sound ready to drive buzzer
+
+	      Buzzer_Write(1);
+	      // EV.10.5.2: Sounded continuously for minimum 1 second
+	      // and a maximum of 3 seconds [we use 2 seconds]
+	      ReadyToDrive_Timer_Start();
+	  }
+
+	  previous_state = state;
+	  if (state != DRIVE) {
+		  // exited drive
+	      Buzzer_Write(0);
+	  }
+
+	  RGB3_1_Write(1);
+	  RGB2_1_Write(1);
+	  RGB1_1_Write(1);
   }
-  /* USER CODE END 3 */
 }
 
 /**
   * @brief System Clock Configuration
-  * @retval None
+  * @retval Nones
   */
 void SystemClock_Config(void)
 {
