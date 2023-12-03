@@ -59,6 +59,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define HV_READ_Pin GPIO_PIN_12
 #define HV_READ_GPIO_Port GPIOD
+#define Drive_READ_Pin GPIO_PIN_9
+#define Drive_READ_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

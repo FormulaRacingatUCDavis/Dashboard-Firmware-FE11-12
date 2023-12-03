@@ -9,5 +9,6 @@
 #define INC_PIN_READ_H_
 
 uint8_t HV_Read();
+uint8_t Drive_READ();
 
 #endif /* INC_PIN_READ_H_ */
