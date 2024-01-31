@@ -63,36 +63,15 @@ CAN_MSG_OBJ msg_TX_vcu_state = {
 
 void can_receive() {
     // gets message and updates values
-    if (CAN1_Receive(&msg_RX)) {
+    if (HAL_CAN_GetRxMessage(&msg_RX)) {
         switch (msg_RX.msgId) {
-            case DRIVER_SWITCHES:
-                switches = msg_RX.data[0];
-                break;
             case BMS_STATUS_MSG:
                 PACK_TEMP = msg_RX.data[0];
                 temp_attenuate();
                 break;
-            case MC_VOLTAGE_INFO:
-                capacitor_volt = (msg_RX.data[0] << 8); // upper bits
-                capacitor_volt += msg_RX.data[1]; // lower bits
-                break;
-            case MC_INTERNAL_STATES:
-                mc_lockout = msg_RX.data[6] & 0b1000000;
-                mc_enabled = msg_RX.data[6] & 0b1;
-                break;
             case PEI_CURRENT_SHUTDOWN:
                 shutdown_flags = msg_RX.data[2];
                 break;
-            case MC_FAULT_CODES:
-                for (uint8_t i = 0; i < 8; i++) {
-                    if (msg_RX.data[i] > 0) {
-                        mc_fault = 1;
-                        break;
-                    }
-                    else {
-                        mc_fault = 0;
-                    }
-                }
             default:
                 // no valid input received
                 break;
@@ -105,30 +84,6 @@ void can_receive() {
     }
     else {
         printf("No message received.\n\r");
-    }
-
-    if (CAN2_Receive(&msg_RX)) {
-        switch (msg_RX.msgId) {
-            case FRONT_RIGHT_WHEEL_SPEED:
-                front_right_wheel_speed = (msg_RX.data[0] << 8) ;
-                front_right_wheel_speed += msg_RX.data[1];
-                break;
-            case FRONT_LEFT_WHEEL_SPEED:
-                front_left_wheel_speed = (msg_RX.data[0] << 8) ;
-                front_left_wheel_speed += msg_RX.data[1];
-                break;
-            case BACK_RIGHT_WHEEL_SPEED:
-                back_right_wheel_speed = (msg_RX.data[0] << 8) ;
-                back_right_wheel_speed += msg_RX.data[1];
-                break;
-            case BACK_LEFT_WHEEL_SPEED:
-                back_left_wheel_speed = (msg_RX.data[0] << 8) ;
-                back_left_wheel_speed += msg_RX.data[1];
-                break;
-            default:
-                // no valid input received
-                break;
-        }
     }
 }
 
@@ -145,7 +100,7 @@ void can_tx_vcu_state(){
 
     msg_TX_vcu_state.field = field_TX_vcu_state;
     msg_TX_vcu_state.data = data_TX_state;
-    CAN1_Transmit(CAN1_TX_TXQ, &msg_TX_vcu_state);
+    HAL_CAN_AddTxMessage(CAN1_TX_TXQ, &msg_TX_vcu_state);
 }
 
 void can_tx_torque_request(){
@@ -171,25 +126,16 @@ void can_tx_torque_request(){
 
     msg_TX_mc_command.field = field_TX_mc_command;
     msg_TX_mc_command.data = data_TX_torque;
-    CAN1_Transmit(CAN1_TX_TXQ, &msg_TX_mc_command);
+    HAL_CAN_AddTxMessage(CAN1_TX_TXQ, &msg_TX_mc_command);
 }
 
-void can_init(){
-    // Set up CAN
-    CAN1_OperationModeSet(CAN_CONFIGURATION_MODE);
-    if(CAN_CONFIGURATION_MODE == CAN1_OperationModeGet()) {
-        if(CAN_OP_MODE_REQUEST_SUCCESS == CAN1_OperationModeSet(CAN_NORMAL_2_0_MODE)) {
-            // CAN set up successful
-        }
-    }
-}
 
 void can_tx_disable_MC() {
     uint8_t data_TX_disable_mc[] = { 0, 0, 0, 0, 0, 0, 0 };
 
     msg_TX_mc_command.field = field_TX_mc_command;
     msg_TX_mc_command.data = data_TX_disable_mc;
-    CAN1_Transmit(CAN1_TX_TXQ, &msg_TX_mc_command);
+    HAL_CAN_AddTxMessage(CAN1_TX_TXQ, &msg_TX_mc_command);
 }
 
 
