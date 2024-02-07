@@ -5299,6 +5299,142 @@ const UG_COLOR pal_checkbox_released[] =
 /* -------------------------------------------------------------------------------- */
 /* -- INTERNAL FUNCTIONS                                                         -- */
 /* -------------------------------------------------------------------------------- */
+
+/*
+void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const UG_FONT* font)
+{
+   UG_U16 i,j,k,xo,yo,c,bn,actual_char_width;
+   UG_U8 b,bt;
+   UG_U32 index;
+   UG_COLOR color;
+   void(*push_pixel)(UG_COLOR);
+
+   bt = (UG_U8)chr;
+
+   switch ( bt )
+   {
+      case 0xF6: bt = 0x94; break; // ö
+      case 0xD6: bt = 0x99; break; // Ö
+      case 0xFC: bt = 0x81; break; // ü
+      case 0xDC: bt = 0x9A; break; // Ü
+      case 0xE4: bt = 0x84; break; // ä
+      case 0xC4: bt = 0x8E; break; // Ä
+      case 0xB5: bt = 0xE6; break; // µ
+      case 0xB0: bt = 0xF8; break; // °
+   }
+
+   if (bt < font->start_char || bt > font->end_char) return;
+
+   yo = y;
+   bn = font->char_width;
+   if ( !bn ) return;
+   bn >>= 3;
+   if ( font->char_width % 8 ) bn++;
+   actual_char_width = (font->widths ? font->widths[bt - font->start_char] : font->char_width);
+
+   /* Is hardware acceleration available?
+   if ( gui->driver[DRIVER_FILL_AREA].state & DRIVER_ENABLED )
+   {
+	   //(void(*)(UG_COLOR))
+      push_pixel = ((void*(*)(UG_S16, UG_S16, UG_S16, UG_S16))gui->driver[DRIVER_FILL_AREA].driver)(x,y,x+actual_char_width-1,y+font->char_height-1);
+
+      if (font->font_type == FONT_TYPE_1BPP)
+	  {
+	      index = (bt - font->start_char)* font->char_height * bn;
+		  for( j=0;j<font->char_height;j++ )
+		  {
+			 c=actual_char_width;
+			 for( i=0;i<bn;i++ )
+			 {
+				b = font->p[index++];
+				for( k=0;(k<8) && c;k++ )
+				{
+				   if( b & 0x01 )
+				   {
+					  push_pixel(fc);
+				   }
+				   else
+				   {
+					  push_pixel(bc);
+				   }
+				   b >>= 1;
+				   c--;
+				}
+			 }
+	 	 }
+	  }
+	  else if (font->font_type == FONT_TYPE_8BPP)
+	  {
+		   index = (bt - font->start_char)* font->char_height * font->char_width;
+		   for( j=0;j<font->char_height;j++ )
+		   {
+			  for( i=0;i<actual_char_width;i++ )
+			  {
+				 b = font->p[index++];
+                                //Blue component                                                           //Green component                                            //Red component
+				 color = ((((fc & 0xFF) * b + (bc & 0xFF) * (256 - b)) >> 8) & 0xFF) | ((((fc & 0xFF00) * b + (bc & 0xFF00) * (256 - b)) >> 8)  & 0xFF00) | ((((fc & 0xFF0000) * b + (bc & 0xFF0000) * (256 - b)) >> 8) & 0xFF0000);
+
+				 push_pixel(color);
+			  }
+			  index += font->char_width - actual_char_width;
+		  }
+	  }
+   }
+   else
+   {
+	   /*Not accelerated output
+	   if (font->font_type == FONT_TYPE_1BPP)
+	   {
+         index = (bt - font->start_char)* font->char_height * bn;
+         for( j=0;j<font->char_height;j++ )
+         {
+           xo = x;
+           c=actual_char_width;
+           for( i=0;i<bn;i++ )
+           {
+             b = font->p[index++];
+             for( k=0;(k<8) && c;k++ )
+             {
+               if( b & 0x01 )
+               {
+                  gui->pset(xo,yo,fc);
+               }
+               else
+               {
+                  gui->pset(xo,yo,bc);
+               }
+               b >>= 1;
+               xo++;
+               c--;
+             }
+           }
+           yo++;
+         }
+      }
+      else if (font->font_type == FONT_TYPE_8BPP)
+      {
+         index = (bt - font->start_char)* font->char_height * font->char_width;
+         for( j=0;j<font->char_height;j++ )
+         {
+            xo = x;
+            for( i=0;i<actual_char_width;i++ )
+            {
+               b = font->p[index++];
+
+                           //Blue component                                                           //Green component                                            //Red component
+			   color = ((((fc & 0xFF) * b + (bc & 0xFF) * (256 - b)) >> 8) & 0xFF) | ((((fc & 0xFF00) * b + (bc & 0xFF00) * (256 - b)) >> 8)  & 0xFF00) | ((((fc & 0xFF0000) * b + (bc & 0xFF0000) * (256 - b)) >> 8) & 0xFF0000);
+
+               gui->pset(xo,yo,color);
+               xo++;
+            }
+            index += font->char_width - actual_char_width;
+            yo++;
+         }
+      }
+   }
+}
+*/
+
 void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const UG_FONT* font)
 {
    UG_U16 i,j,k,xo,yo,c,bn,actual_char_width;
@@ -5383,6 +5519,10 @@ void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const 
 	   /*Not accelerated output*/
 	   if (font->font_type == FONT_TYPE_1BPP)
 	   {
+
+		 SSD1963_WindowSet(x, x+actual_char_width-1, y, y+font->char_height-1);
+		 SSD1963_WriteMemoryStart();
+
          index = (bt - font->start_char)* font->char_height * bn;
          for( j=0;j<font->char_height;j++ )
          {
@@ -5395,11 +5535,11 @@ void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const 
              {
                if( b & 0x01 )
                {
-                  gui->pset(xo,yo,fc);
+            	  SSD1963_ConsecutivePSet(fc);
                }
                else
                {
-                  gui->pset(xo,yo,bc);
+            	  SSD1963_ConsecutivePSet(bc);
                }
                b >>= 1;
                xo++;

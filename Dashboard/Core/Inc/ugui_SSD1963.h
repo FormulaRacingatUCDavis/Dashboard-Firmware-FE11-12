@@ -56,12 +56,15 @@
 #define mmDisplayReset_Write(value) CONCATENATE(DISPLAY_RESET, _Write(value))
 #define mmDisplayCD_Write(value)    CONCATENATE(DISPLAY_CD, _Write(value))
 
-/* *** Function prototypes. *** */
-void Display_Init();
-void Display_PSet(UG_S16 x, UG_S16 y, UG_COLOR c);
-void Display_WindowSet(unsigned int s_x,unsigned int e_x,unsigned int s_y,unsigned int e_y);
+//////      Public Function Prototypes   ///////
+void SSD1963_Reset();
+void SSD1963_Init();
+void SSD1963_PSet(UG_S16 x, UG_S16 y, UG_COLOR c);
+void SSD1963_WindowSet(unsigned int s_x,unsigned int e_x,unsigned int s_y,unsigned int e_y);
+void SSD1963_WriteMemoryStart();
+void SSD1963_ConsecutivePSet(UG_COLOR c);
 
-    // Accelerators.
+// Accelerators
 UG_RESULT HW_FillFrame(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, UG_COLOR c);
 UG_RESULT HW_DrawLine(UG_S16 x1 , UG_S16 y1 , UG_S16 x2 , UG_S16 y2 , UG_COLOR c );
 UG_RESULT HW_DrawImage(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, uint8_t *image, uint16_t pSize);

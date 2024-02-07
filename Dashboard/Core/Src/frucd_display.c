@@ -13,31 +13,74 @@
  * ========================================
 */
 #include "frucd_display.h"
-#include "stm32f7xx_hal.h"
+
+typedef struct {
+    uint16_t box_x1;
+    uint16_t box_y1;
+    uint16_t box_x2;
+    uint16_t box_y2;
+    uint16_t grn_ylw_cutoff;
+    uint16_t ylw_org_cutoff;
+    uint16_t org_red_cutoff;
+    UG_FONT font;
+    UG_COLOR last_color;
+    uint16_t last_value;
+    char units;
+} TEXTBOX_CONFIG;
 
 
-// color caching variables
-//  - avoid redrawing rectangle if color didn't change
-UG_COLOR last_SOC_color;
-UG_COLOR last_max_pack_temp_color;
-UG_COLOR last_state_color;
-UG_COLOR last_glv_v_color;
-UG_COLOR last_mc_temp_color;
-UG_COLOR last_motor_temp_color;
-UG_COLOR last_shutdown_color;
+
+TEXTBOX_CONFIG soc_box = {
+		.grn_ylw_cutoff = 75,
+		.ylw_org_cutoff = 50,
+		.org_red_cutoff = 25,
+		.units = '%'};
+
+TEXTBOX_CONFIG bms_temp_box = {
+		.grn_ylw_cutoff = 30,
+		.ylw_org_cutoff = 40,
+		.org_red_cutoff = 50,
+		.units = 'C'};
+
+TEXTBOX_CONFIG state_box;
+
+bool debug_mode = false;
+UG_GUI gui1963;
+
+
+/// PRIVATE FUNCTION PROTOTYPES ///
+void draw_soc(uint16_t soc);
+void draw_bms_temp(uint16_t temp);
+void draw_state(uint8_t state, uint16_t bms_status);
+void draw_value_textbox(TEXTBOX_CONFIG* cfg, uint16_t value);
+void draw_textbox(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str_len);
+UG_COLOR value_to_color(TEXTBOX_CONFIG cfg, uint16_t value);
+
+
+void Display_Init()
+{
+	SSD1963_Init();
+
+	// Initialize global structure and set PSET to this.PSET.
+	UG_Init(&gui1963, SSD1963_PSet, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+
+	UG_FontSetVSpace(0);
+	UG_FontSetHSpace(0);
+
+	// Register acceleratos.
+	UG_DriverRegister(DRIVER_FILL_FRAME, (void*)HW_FillFrame);
+	UG_DriverRegister(DRIVER_DRAW_LINE, (void*)HW_DrawLine);
+	UG_DriverRegister(DRIVER_DRAW_IMAGE, (void*)HW_DrawImage);
+}
+
 
 // Just a test function that displays elements at the supposed corners of the screen
-void calibrateScreen() {
+void Display_CalibrateScreen() {
     UG_FillScreen(C_BLUE);
-    //libTFT_FillRectangle(0, 0, 10, 10, RED);
     UG_FillFrame(0, 0, 10, 10, C_RED);
-    //libTFT_FillRectangle(0, 262, 10, 10, BLUE);
     UG_FillFrame(0, 262, 10, 272, C_BLUE);
-    //libTFT_FillRectangle(470, 0, 10, 10, GREEN);
     UG_FillFrame(470, 0, 480, 10, C_GREEN);
-    //libTFT_FillRectangle(470, 262, 10, 10, YELLOW);
     UG_FillFrame(470, 262, 480, 272, C_YELLOW);
-    //HAL_Delay(300);
 }
 
 // Initializes dashboard layout/label
@@ -53,8 +96,14 @@ void initDashTemplate() {
 }
 */
 
-void debugTemplate(){
+void Display_DebugTemplate()
+{
+    debug_mode = true;
+
+    // clear screen
     UG_FillScreen(C_BLACK);
+
+    // draw labels
     UG_PutString(10, 10, "PACK SOC:");
     UG_PutString(250, 10, "MAX PACK T:");
     UG_PutString(10, 75, "STATE:");
@@ -63,92 +112,279 @@ void debugTemplate(){
     UG_PutString(250, 140, "MOTOR T:");
     UG_PutString(10, 205, "SHUTDOWN:");
     UG_PutString(250, 205, "MC FAULT:");
+
+    // setup textbox configs
+
 }
-void driveTemplate(){
+
+void Display_DriveTemplate()
+{
+    debug_mode = false;
+
+    // clear screen
     UG_FillScreen(C_BLACK);
+
+    // draw labels
     UG_PutString(68, 10, "PACK SOC");
     UG_PutString(297, 10, "MAX PACK T");
     UG_PutString(5, 180, "STATE:");
     UG_PutString(275, 180, "GLV V:");
 
+    // setup textbox configs
+    soc_box.box_x1 = 30;
+    soc_box.box_y1 = 35;
+    soc_box.box_x2 = 210;
+    soc_box.box_y2 = 170;
+    soc_box.font = FONT_32X53;
+    soc_box.last_color = C_BLACK;  // force box redraw
+    soc_box.last_value = 255;
+
+    bms_temp_box.box_x1 = 270;
+	bms_temp_box.box_y1 = 35;
+	bms_temp_box.box_x2 = 450;
+	bms_temp_box.box_y2 = 170;
+	bms_temp_box.font = FONT_32X53;
+	bms_temp_box.last_color = C_BLACK;  // force box redraw
+	bms_temp_box.last_value = 255;
+
+	state_box.box_x1 = 20;
+	state_box.box_y1 = 200;
+	state_box.box_x2 = 200;
+	state_box.box_y2 = 230;
+	state_box.font = FONT_12X16;
+	state_box.last_color = C_BLACK;  // force box redraw
 }
-/*
- * BEGIN: functions to show data on dash
- * - handle variety of digit counts
- * - color decision logic is in here
- */
+
+void Display_Update()
+{
+	static uint8_t soc = 0;
+	soc = soc+1 ;
+
+    draw_soc(soc);
+    draw_bms_temp(soc);
+    draw_state(soc, 0);
+}
 
 
 
-/* Left in non-generalized functions for future reference*/
+void draw_soc(uint16_t soc)
+{
+	draw_value_textbox(&soc_box, soc);
+}
 
+void draw_bms_temp(uint16_t temp)
+{
+	draw_value_textbox(&bms_temp_box, temp);
+}
 
-/*
-void disp_SOC(uint8_t data) {
-    UG_FontSelect(&FONT_32X53);
+void draw_state(uint8_t state, uint16_t bms_status)
+{
+    static uint8_t last_state = 255;
+    static uint16_t last_bms_status;
+
+    if((state == last_state) && (bms_status == last_bms_status))  // skip function if value is the same
+    {
+        return;
+    }
+
     UG_COLOR color;
-    if (data == 100) {
-        // handle 100% case
-        color = C_GREEN;
-        if (color != last_SOC_color) {
-            // only draw rectangle if color changed
-            UG_FillFrame(30, 35, 210, 170, color);
-            last_SOC_color = color;
-        }
-        UG_PutColorString(55, 80, "100%", C_BLACK, C_GREEN);
-    } else {
-        // handle other cases
-        char data_s[4];
-        sprintf(data_s, "%d", data);
-        if (data >= 10) {
-            // handle 2 digit cases
-            // choose color
-            if (data > 75) {
-                color = C_GREEN;
-            } else if (data > 50) {
-                color = C_YELLOW;
-            } else if (data > 25) {
-                color = C_ORANGE;
-            } else {
-                color = C_RED;
-            }
-            data_s[2] = '%';
-            data_s[3] = '\0';
-            if (color != last_SOC_color) {
-                // only draw rectangle if color changed
-                UG_FillFrame(30, 35, 210, 170, color);
-                last_SOC_color = color;
-            }
-            UG_PutColorString(70, 80, data_s, C_BLACK, color);
-        } else {
-            // handle 1 digit cases
-            data_s[1] = '%';
-            data_s[2] = '\0';
+    char string[15];
+
+    switch(bms_status)  // BMS faults more important than VCU faults
+    {
+        case PACK_TEMP_OVER:
+        case PACK_TEMP_UNDER:
             color = C_RED;
+            strcpy(string, " BMS TEMP ");
+            break;
+        case LOW_SOC:
+            color = C_RED;
+            strcpy(string, " LOW SOC ");
+            break;
+        case IMBALANCE:
+            color = C_RED;
+            strcpy(string, "IMBALANCE");
+            break;
+        case SPI_FAULT:
+            color = C_RED;
+            strcpy(string, "SPI FAULT");
+            break;
+        case CELL_VOLT_OVER:
+            color = C_RED;
+            strcpy(string, " OVERVOLT ");
+            break;
+        case CELL_VOLT_UNDER:
+            color = C_RED;
+            strcpy(string, "UNDERVOLT");
+            break;
+        default:
+            // check fault bit
+            if (state & 0x80) {
+                // *************** FAULTS ***************
+                uint8_t fault = state & 0x7f; // mask off fault bit
+                switch(fault)
+                {
+                    case NONE: // STARTUP (effectively)
+                        // not obtainable via CAN
+                        // would only show when hardcoded on startup
+                        color = C_YELLOW;
+                        strcpy(string, " STARTUP  ");
+                        break;
+                    case DRIVE_REQUEST_FROM_LV:
+                        color = C_RED;
+                        strcpy(string, "DRV FRM LV");
+                        break;
+                    case CONSERVATIVE_TIMER_MAXED:
+                        color = C_RED;
+                        strcpy(string, "PRE TM OUT");
+                        break;
+                    case BRAKE_NOT_PRESSED:
+                        color = C_RED;
+                        strcpy(string, "BR NOT PRS");
+                        break;
+                    case HV_DISABLED_WHILE_DRIVING:
+                        color = C_RED;
+                        strcpy(string, "HV OFF DRV");
+                        break;
+                    case SENSOR_DISCREPANCY:
+                        color = C_RED;
+                        strcpy(string, "SNSR DSCRP");
+                        break;
+                    case BRAKE_IMPLAUSIBLE:
+                        color = C_YELLOW;
+                        strcpy(string, "BSPD TRIPD");
+                        break;
+                    case SHUTDOWN_CIRCUIT_OPEN:
+                        color = C_RED;
+                        strcpy(string, "SHTDWN OPN");
+                        break;
+                    case UNCALIBRATED:
+                        color = C_RED;
+                        strcpy(string, "UNCALIBRTD");
+                        break;
+                    case HARD_BSPD:
+                        color = C_RED;
+                        strcpy(string, "HARD BSPD");
+                        break;
+                    case MC_FAULT:
+                        color = C_RED;
+                        strcpy(string, " MC FAULT ");
+                        break;
+                    default:
+                        color = C_RED;
+                        strcpy(string, " YO WTF? ");
+                        break;
+                }
+            }
+            else
+            {
+                // *************** NO FAULTS ***************
+                color = C_GREEN;
+                switch(state)
+                {
+                    case LV:
+                        strcpy(string, "    LV    ");
+                        break;
+                    case PRECHARGING:
+                        strcpy(string, "PRECHARGE ");
+                        break;
+                    case HV_ENABLED:
+                        strcpy(string, "HV ENABLED");
+                        break;
+                    case DRIVE:
+                        strcpy(string, "  DRIVE   ");
+                        break;
+                    default:
+						color = C_RED;
+						strcpy(string, " YO WTF? ");
+						break;
+                }
+            }
+    }
+
+    draw_textbox(&state_box, color, string, 11);
+}
 
 
 
 
-            //why is this here?
-            UG_FillFrame(30, 35, 210, 170, C_BLACK);
-
-
-
-
-
-
-
-            UG_FillFrame(30, 35, 210, 170, color);
-            UG_PutColorString(90, 80, data_s, C_BLACK, color);
+UG_COLOR value_to_color(TEXTBOX_CONFIG cfg, uint16_t value)
+{
+    if(cfg.grn_ylw_cutoff > cfg.ylw_org_cutoff)   // green for large red for small
+    {
+        if(value > cfg.grn_ylw_cutoff)
+        {
+            return C_GREEN;
+        }
+        else if(value > cfg.ylw_org_cutoff)
+        {
+            return C_YELLOW;
+        }
+        else if(value > cfg.org_red_cutoff)
+        {
+            return C_ORANGE_RED;  // normal orange looks yellow
+        }
+        else
+        {
+            return C_RED;
         }
     }
-    UG_FontSelect(&FONT_12X16);
+    else  // red for large green for small
+    {
+        if(value > cfg.org_red_cutoff)
+        {
+            return C_RED;
+        }
+        else if(value > cfg.ylw_org_cutoff)
+        {
+            return C_ORANGE_RED;  // normal orange looks yellow
+        }
+        else if(value > cfg.grn_ylw_cutoff)
+        {
+            return C_YELLOW;
+        }
+        else
+        {
+            return C_GREEN;
+        }
+    }
+}
+
+void draw_value_textbox(TEXTBOX_CONFIG* cfg, uint16_t value)
+{
+	if(value == cfg->last_value)
+	{
+		return;
+	}
+
+	cfg->last_value = value;
+
+	UG_COLOR color = value_to_color(*cfg, value);
+	char string[10];
+	uint16_t str_len = sprintf(string, "%d%c", value, cfg->units);
+
+	draw_textbox(cfg, color, string, str_len);
+}
+
+void draw_textbox(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str_len)
+{
+    // determine x and y coordinates to center text
+    uint16_t text_x = (cfg->box_x2 + cfg->box_x1)/2 - ((str_len * cfg->font.char_width)/2);
+    uint16_t text_y = (cfg->box_y2 + cfg->box_y1)/2 - (cfg->font.char_height/2);
+
+    if(color != cfg->last_color)
+    {
+    	color = C_WHITE;
+        UG_FillFrame(cfg->box_x1, cfg->box_y1, cfg->box_x2, cfg->box_y2, color);
+        cfg->last_color = color;
+    }
+
+    UG_FontSelect(&cfg->font);
+    UG_PutColorString(text_x, text_y, string, C_BLACK, color);
 }
 
 
-*/
-
-
+/*
 // size is big if 1, small if not
 void disp_SOC(uint16_t data, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t size) {
     int stringSize;
@@ -204,7 +440,7 @@ void disp_SOC(uint16_t data, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,
 
     UG_FontSelect(&FONT_12X16);
 }
-
+*/
 /*
 
 void disp_max_pack_temp(uint8_t data) {
@@ -239,7 +475,7 @@ void disp_max_pack_temp(uint8_t data) {
 }
 
 */
-
+/*
 
 void disp_max_pack_temp(uint8_t data, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t size) {
     int xFont, yFont;
@@ -283,7 +519,7 @@ void disp_max_pack_temp(uint8_t data, uint16_t x1, uint16_t y1, uint16_t x2, uin
     UG_PutColorString(xFont, yFont, data_s, C_BLACK, color);
     UG_FontSelect(&FONT_12X16);
 }
-
+*/
 
 /*
 
@@ -399,160 +635,7 @@ void disp_state(uint8_t state) { // TODO
 */
 
 
-void disp_state(uint8_t state, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t size) {
-    int xFont, yFont;
-    int horizFontSize = 12 + 20*size;
-    int stringSize;
-    stringSize = 10;
-    xFont = (x1 + x2)/2 - ((horizFontSize*stringSize)/2);
-    yFont = (y1 + y2)/2 - 5 - (size*17);
-    if(size == 1){
-        UG_FontSelect(&FONT_32X53);
 
-    }
-    UG_COLOR color;
-    // check fault bit
-    if (state & 0x80) {
-        // *************** FAULTS ***************
-        uint8_t fault = state & 0x7f; // mask off fault bit
-        switch(fault) {
-            case NONE: // STARTUP (effectively)
-                // not obtainable via CAN
-                // would only show when hardcoded on startup
-                color = C_YELLOW;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, " STARTUP  ", C_BLACK, color);
-                break;
-            case DRIVE_REQUEST_FROM_LV:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "DRV FRM LV", C_BLACK, color);
-                break;
-            case CONSERVATIVE_TIMER_MAXED:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "PRE TM OUT", C_BLACK, color);
-                break;
-            case BRAKE_NOT_PRESSED:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "BR NOT PRS", C_BLACK, color);
-                break;
-            case HV_DISABLED_WHILE_DRIVING:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "HV OFF DRV", C_BLACK, color);
-                break;
-            case SENSOR_DISCREPANCY:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "SNSR DSCRP", C_BLACK, color);
-                break;
-            case BRAKE_IMPLAUSIBLE:
-                color = C_YELLOW;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "BSPD TRIPD", C_BLACK, color); //whitespace to clear
-                break;
-            case SHUTDOWN_CIRCUIT_OPEN:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "SHTDWN OPN", C_BLACK, color); //whitespace to clear
-                break;
-            case UNCALIBRATED:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "UNCALIBRTD", C_BLACK, color); //whitespace to clear
-                break;
-            case HARD_BSPD:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "HARD BSPD", C_BLACK, color); //whitespace to clear
-                break;
-            case MC_FAULT:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "MC FAULT", C_BLACK, color); //whitespace to clear
-                break;
-            default:
-                color = C_RED;
-                if (color != last_state_color) {
-                    // only draw rectangle if color changed
-                    UG_FillFrame(x1, y1, x2, y2, color);
-                    last_state_color = color;
-                }
-                UG_PutColorString(xFont, yFont, "YO WTF?", C_BLACK, color); //whitespace to clear
-                break;
-
-        }
-    } else {
-        // *************** NO FAULTS ***************
-        color = C_GREEN;
-        if (color != last_state_color) {
-            // only draw rectangle if color changed
-            UG_FillFrame(x1, y1, x2, y2, color);
-            last_state_color = color;
-        }
-        switch(state) {
-            case LV:
-                UG_PutColorString(xFont, yFont, "    LV    ", C_BLACK, color);
-                break;
-            case PRECHARGING:
-                UG_PutColorString(xFont, yFont, "PRECHARGE ", C_BLACK, color);
-                break;
-            case HV_ENABLED:
-                UG_PutColorString(xFont, yFont, "HV ENABLED", C_BLACK, color);
-                break;
-            case DRIVE:
-                UG_PutColorString(xFont, yFont, "  DRIVE   ", C_BLACK, color);
-                break;
-        }
-    }
-     UG_FontSelect(&FONT_12X16);
-}
 
 /*
 
@@ -598,7 +681,7 @@ void disp_glv_v(uint32_t data) {
 
 */
 
-
+/*
 void disp_glv_v(uint32_t data, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t size) {
     int xFont, yFont;
     int horizFontSize = 12 + 20*size;
@@ -650,7 +733,7 @@ void disp_glv_v(uint32_t data, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y
     UG_PutColorString(xFont, yFont, data_s, C_BLACK, color);
     UG_FontSelect(&FONT_12X16);
 }
-
+*/
 
 /*
 void disp_mc_temp(uint16_t data) {
@@ -673,10 +756,11 @@ void disp_mc_temp(uint16_t data) {
     }
 }
 */
-
+/*
 void disp_mc_temp(uint16_t data, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t size){
     disp_gen_temp(data, x1, y1, x2, y2, size);
 }
+*/
 /*
 void disp_motor_temp(uint16_t data) {
     if (data >= 100) {
@@ -698,7 +782,7 @@ void disp_motor_temp(uint16_t data) {
     }
 }
 */
-
+/*
 void disp_motor_temp(uint16_t data, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint8_t size){
     disp_gen_temp(data, x1, y1, x2, y2, size);
 }
@@ -917,5 +1001,6 @@ void clear_colors(void)
     last_motor_temp_color = C_BLACK;
     last_shutdown_color = C_BLACK;
 }
+*/
 
 /* [] END OF FILE */
