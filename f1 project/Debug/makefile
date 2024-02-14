@@ -60,8 +60,8 @@ all: main-build
 main-build: f1\ project.elf secondary-outputs
 
 # Tool invocations
-f1\ project.elf f1\ project.map: $(OBJS) $(USER_OBJS) /Users/cogus/STM32CubeIDE/workspace_1.13.2/f1\ project/STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "f1 project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/Users/cogus/STM32CubeIDE/workspace_1.13.2/f1 project/STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="f1 project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+f1\ project.elf f1\ project.map: $(OBJS) $(USER_OBJS) /Users/cogus/STM32CubeIDE/workspace_1.13.2/f1\ project/f1\ project/STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "f1 project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/Users/cogus/STM32CubeIDE/workspace_1.13.2/f1 project/f1 project/STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="f1 project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

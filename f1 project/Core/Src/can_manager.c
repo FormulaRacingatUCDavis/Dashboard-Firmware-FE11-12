@@ -6,6 +6,8 @@
  */
 
 #include "can_manager.h"
+#include "stm32f7xx_hal_can.h"
+#include "main.h"
 
 extern volatile state_t state;
 extern volatile error_t error;
@@ -33,31 +35,48 @@ CAN_MSG_OBJ msg_RX;
 /********** OUTGOING CAN MESSAGES **********/
 
 // mc command
-CAN_MSG_FIELD field_TX_mc_command = {
-    .idType = 0,
-    .frameType = 0,
-    .dlc = 6,
-    .formatType = 0,
-    .brs = 0
-};
-CAN_MSG_OBJ msg_TX_mc_command = {
-    .msgId = MC_COMMAND,
-    .field = {0}, // null
-    .data = 0 // null pointer
-};
+//CAN_MSG_FIELD field_TX_mc_command = {
+//    .idType = 0,
+//    .frameType = 0,
+//    .dlc = 6,
+//    .formatType = 0,
+//    .brs = 0
+//};
+//conversion to new type of can below
+
+CAN_TxHeaderTypeDef TxHeader;
+uint8_t MC_Command_MSG_Data[8];
+uint32_t TxMailbox;
+
+TxHeader.IDE = CAN_ID_STD;
+TxHeader.StdId = TORQUE_REQUEST;
+TxHeader.RTR = CAN_RTR_DATA;
+TxHeader.DLC = 6;
+
+
 // VCU state
-CAN_MSG_FIELD field_TX_vcu_state = {
-    .idType = 0,
-    .frameType = 0,
-    .dlc = 8,
-    .formatType = 0,
-    .brs = 0
-};
-CAN_MSG_OBJ msg_TX_vcu_state = {
-    .msgId = VEHICLE_STATE,
-    .field = {0}, // null
-    .data = 0 // null pointer
-};
+//CAN_MSG_FIELD field_TX_vcu_state = {
+//    .idType = 0,
+//    .frameType = 0,
+//    .dlc = 8,
+//    .formatType = 0,
+//    .brs = 0
+//};
+
+CAN_TxHeaderTypeDef TxHeader;
+uint8_t VCU_STATE_MSG[8];
+uint32_t TxMailbox;
+
+TxHeader.IDE = CAN_ID_STD;
+TxHeader.StdId = VECHICLE_STATE;
+TxHeader.RTR = CAN_RTR_DATA;
+TxHeader.DLC = 8;
+
+//CAN_MSG_OBJ msg_TX_vcu_state = {
+//    .msgId = VEHICLE_STATE,
+//    .field = {0}, // null
+//    .data = 0 // null pointer
+//};
 
 /************ CAN ************/
 

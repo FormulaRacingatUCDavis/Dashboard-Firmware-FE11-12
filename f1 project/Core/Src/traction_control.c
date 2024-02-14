@@ -40,6 +40,3 @@ void traction_control_PID() {
     prev_pid_error = pid_error;
 }
 
-
-
-

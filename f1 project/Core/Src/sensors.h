@@ -41,7 +41,7 @@ typedef struct{
 } CALIBRATED_SENSOR_t;
 
 //function prototypes
-uint16_t getConversion(ADC1_CHANNEL channel);
+//uint16_t getConversion(ADC1_CHANNEL channel);
 void run_calibration();
 void update_sensor_vals();
 
