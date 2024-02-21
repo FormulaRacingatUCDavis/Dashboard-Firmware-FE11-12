@@ -1,0 +1,4 @@
+../Core/Src/fsm.c:15:6:change_state	16	static
+../Core/Src/fsm.c:25:6:report_fault	16	static
+../Core/Src/fsm.c:31:9:hv_requested	4	static
+../Core/Src/fsm.c:40:9:one_byte_state	16	static
