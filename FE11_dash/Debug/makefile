@@ -60,8 +60,8 @@ all: main-build
 main-build: FE11_dash.elf secondary-outputs
 
 # Tool invocations
-FE11_dash.elf FE11_dash.map: $(OBJS) $(USER_OBJS) C:\Users\leoja\STM32CubeIDE\workspace_1.13.2\FE11_dash\STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "FE11_dash.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\leoja\STM32CubeIDE\workspace_1.13.2\FE11_dash\STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="FE11_dash.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+FE11_dash.elf FE11_dash.map: $(OBJS) $(USER_OBJS) C:\Users\Melody\Desktop\Programming_Stuff\FRUCD\Dashboard-Firmware-FE11\FE11_dash\STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "FE11_dash.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\Melody\Desktop\Programming_Stuff\FRUCD\Dashboard-Firmware-FE11\FE11_dash\STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="FE11_dash.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

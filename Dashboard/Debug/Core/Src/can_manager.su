@@ -1,0 +1,2 @@
+../Core/Src/can_manager.c:11:6:setTXDefaults	16	static
+../Core/Src/can_manager.c:16:6:can_send_switches	48	static

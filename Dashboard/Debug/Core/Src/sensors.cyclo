@@ -1,0 +1,14 @@
+../Core/Src/sensors.c:27:10:getConversion	1
+../Core/Src/sensors.c:45:6:run_calibration	1
+../Core/Src/sensors.c:51:6:update_sensor_vals	1
+../Core/Src/sensors.c:83:10:requested_throttle	1
+../Core/Src/sensors.c:91:6:temp_attenuate	4
+../Core/Src/sensors.c:102:6:sensors_calibrated	3
+../Core/Src/sensors.c:109:6:braking	1
+../Core/Src/sensors.c:113:6:brake_mashed	1
+../Core/Src/sensors.c:120:6:has_discrepancy	1
+../Core/Src/sensors.c:132:6:brake_implausible	4
+../Core/Src/sensors.c:144:6:update_percent	1
+../Core/Src/sensors.c:149:6:update_minmax	4
+../Core/Src/sensors.c:155:10:clamp	3
+../Core/Src/sensors.c:161:6:init_sensors	1

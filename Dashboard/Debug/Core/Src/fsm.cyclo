@@ -1,0 +1,4 @@
+../Core/Src/fsm.c:17:6:change_state	3
+../Core/Src/fsm.c:27:6:report_fault	1
+../Core/Src/fsm.c:33:9:hv_requested	7
+../Core/Src/fsm.c:42:9:one_byte_state	2

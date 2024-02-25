@@ -110,14 +110,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //UG_FillScreen(C_BLUE);
-	  //HAL_Delay(100);
-	  //UG_FillScreen(C_GREEN);
-	  //HAL_Delay(100);
-	  //UG_FillScreen(C_RED);
-	  //HAL_Delay(100);
-	  //UG_PutString(0, 0, "Hello");
-	  //HAL_Delay(1000);
+//	  UG_FillScreen(C_BLUE);
+//	  HAL_Delay(100);
+//	  UG_FillScreen(C_GREEN);
+//	  HAL_Delay(100);
+//	  UG_FillScreen(C_RED);
+//	  HAL_Delay(100);
+	  UG_PutString(0, 0, "Hello");
+	  UG_PutColorString(50, 50, "It's working", C_RED, C_WHITE);
+	  UG_PutColorString(0, 110, "still working", C_BLACK, C_WHITE);
+	  HAL_Delay(1000);
 
     /* USER CODE END WHILE */
 
@@ -138,7 +140,7 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -148,7 +150,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 216;
+  RCC_OscInitStruct.PLL.PLLN = 100;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -169,10 +171,10 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
   {
     Error_Handler();
   }
@@ -187,7 +189,6 @@ static void MX_FMC_Init(void)
   /* USER CODE END FMC_Init 0 */
 
   FMC_NORSRAM_TimingTypeDef Timing = {0};
-  FMC_NORSRAM_TimingTypeDef ExtTiming = {0};
 
   /* USER CODE BEGIN FMC_Init 1 */
 
@@ -198,7 +199,7 @@ static void MX_FMC_Init(void)
   hsram1.Instance = FMC_NORSRAM_DEVICE;
   hsram1.Extended = FMC_NORSRAM_EXTENDED_DEVICE;
   /* hsram1.Init */
-  hsram1.Init.NSBank = FMC_NORSRAM_BANK1;
+  hsram1.Init.NSBank = FMC_NORSRAM_BANK2;
   hsram1.Init.DataAddressMux = FMC_DATA_ADDRESS_MUX_DISABLE;
   hsram1.Init.MemoryType = FMC_MEMORY_TYPE_SRAM;
   hsram1.Init.MemoryDataWidth = FMC_NORSRAM_MEM_BUS_WIDTH_16;
@@ -207,30 +208,23 @@ static void MX_FMC_Init(void)
   hsram1.Init.WaitSignalActive = FMC_WAIT_TIMING_BEFORE_WS;
   hsram1.Init.WriteOperation = FMC_WRITE_OPERATION_ENABLE;
   hsram1.Init.WaitSignal = FMC_WAIT_SIGNAL_DISABLE;
-  hsram1.Init.ExtendedMode = FMC_EXTENDED_MODE_ENABLE;
+  hsram1.Init.ExtendedMode = FMC_EXTENDED_MODE_DISABLE;
   hsram1.Init.AsynchronousWait = FMC_ASYNCHRONOUS_WAIT_DISABLE;
   hsram1.Init.WriteBurst = FMC_WRITE_BURST_DISABLE;
   hsram1.Init.ContinuousClock = FMC_CONTINUOUS_CLOCK_SYNC_ONLY;
   hsram1.Init.WriteFifo = FMC_WRITE_FIFO_ENABLE;
   hsram1.Init.PageSize = FMC_PAGE_SIZE_NONE;
   /* Timing */
-  Timing.AddressSetupTime = 1;
+  Timing.AddressSetupTime = 15;
   Timing.AddressHoldTime = 15;
-  Timing.DataSetupTime = 1;
-  Timing.BusTurnAroundDuration = 1;
+  Timing.DataSetupTime = 255;
+  Timing.BusTurnAroundDuration = 15;
   Timing.CLKDivision = 16;
   Timing.DataLatency = 17;
   Timing.AccessMode = FMC_ACCESS_MODE_A;
   /* ExtTiming */
-  ExtTiming.AddressSetupTime = 1;
-  ExtTiming.AddressHoldTime = 15;
-  ExtTiming.DataSetupTime = 1;
-  ExtTiming.BusTurnAroundDuration = 15;
-  ExtTiming.CLKDivision = 16;
-  ExtTiming.DataLatency = 17;
-  ExtTiming.AccessMode = FMC_ACCESS_MODE_A;
 
-  if (HAL_SRAM_Init(&hsram1, &Timing, &ExtTiming) != HAL_OK)
+  if (HAL_SRAM_Init(&hsram1, &Timing, NULL) != HAL_OK)
   {
     Error_Handler( );
   }
@@ -256,6 +250,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
