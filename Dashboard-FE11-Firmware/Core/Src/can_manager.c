@@ -5,6 +5,7 @@
  *      Author: cogus
  */
 #include "can_manager.h"
+#include <stdio.h>
 
 extern volatile state_t state;
 extern volatile error_t error;
@@ -26,8 +27,16 @@ volatile uint16_t front_left_wheel_speed = 0;
 volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
 
+CAN_TxHeaderTypeDef   TxHeader;
+CAN_RxHeaderTypeDef   RxHeader;
+uint8_t               TxData[8];
+uint32_t              TxMailbox;
+uint8_t               RxData[8];
+
+CAN_HandleTypeDef hcan1;
+
 // receive buffer message
-CAN_MSG_OBJ msg_RX;
+//CAN_MSG_OBJ msg_RX;
 
 /********** OUTGOING CAN MESSAGES **********/
 
@@ -73,31 +82,45 @@ void can_set_up() {
 
 /************ CAN ************/
 
-void can_receive() {
+
+void CAN_Receive() {
     // gets message and updates values
-    if (HAL_CAN_GetRxMessage(hcan1, Rxfifo, TxHeader, MC_Command_MSG_Data) {
-        switch (msg_RX.msgId) {
-            case BMS_STATUS_MSG:
-                PACK_TEMP = msg_RX.data[0];
-                temp_attenuate();
-                break;
-            case PEI_CURRENT_SHUTDOWN:
-                shutdown_flags = msg_RX.data[2];
-                break;
-            default:
-                // no valid input received
-                break;
+    if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, RxHeader, RxData)) {
+
+    	if(RxHeader.StdId == BMS_STATUS_MSG) {
+    		temp_attenuate();
+    	} else if(RxHeader.StdId == PEI_CURRENT_SHUTDOWN) {
+    		shutdown_flags = RxData[2];
+    	} else {
+    	}
+
+//below is the code from the fe10 version
+//        switch (msg_RX.msgId) {
+//            case BMS_STATUS_MSG:
+//                PACK_TEMP = msg_RX.data[0];
+//                temp_attenuate();
+//                break;
+//            case PEI_CURRENT_SHUTDOWN:
+//                shutdown_flags = msg_RX.data[2];
+//                break;
+//            default:
+//                // no valid input received
+//                break;
+//        }
+    	char str[80];
+    	sprintf(str, "RxHeader = %lu", RxHeader.StdId);
+    	CDC_Trasmit_FS(str, strlen(str));
+        //printf("ID: %lu \n\r", RxHeader.StdId);
+        for (uint8_t i = 1; i < RxHeader.DLC; i++) {
+        	char str_data[80];
+        	sprintf(str_data,"RxData = %d", RxData[i]);
+        	CDC_Trasmit_FS(str_data, strlen(str_data));
+            //printf("byte %d: %d\n\r", i, RxData[i]);
         }
-        printf("ID: %d \n\r", msg_RX.msgId);
-        for (uint8_t i = 1; i < msg_RX.field.dlc; i++) {
-            printf("byte %d: %d\n\r", i, msg_RX.data[i]);
-        }
-        printf("\n\r");
-    }
-    else {
-        printf("No message received.\n\r");
     }
 }
+
+
 
 //  CAN transmit torque request command
 void can_tx_vcu_state(){
@@ -110,9 +133,14 @@ void can_tx_vcu_state(){
         braking()
     };
 
-    msg_TX_vcu_state.field = field_TX_vcu_state;
-    msg_TX_vcu_state.data = data_TX_state;
-    HAL_CAN_AddTxMessage(CAN1_TX_TXQ, &msg_TX_vcu_state);
+    //adding vehicle state stuff to CAN header
+    TxHeader.IDE = CAN_ID_STD;
+    TxHeader.StdId = VEHICLE_STATE;
+    TxHeader.RTR = CAN_RTR_DATA;
+    TxHeader.DLC = 8;
+//    msg_TX_vcu_state.field = field_TX_vcu_state;
+//    msg_TX_vcu_state.data = data_TX_state;
+    HAL_CAN_AddTxMessage(&hcan1, &TxHeader, data_TX_state, &TxMailbox);
 }
 
 void can_tx_torque_request(){
@@ -136,17 +164,24 @@ void can_tx_torque_request(){
         0 // 7 - torque limit upper (if 0, default EEPROM value used)
     };
 
-    msg_TX_mc_command.field = field_TX_mc_command;
-    msg_TX_mc_command.data = data_TX_torque;
-    HAL_CAN_AddTxMessage(CAN1_TX_TXQ, &msg_TX_mc_command);
+    //adding torque request stuff to CAN header
+    TxHeader.IDE = CAN_ID_STD;
+    TxHeader.StdId = TORQUE_REQUEST;
+    TxHeader.RTR = CAN_RTR_DATA;
+    TxHeader.DLC = 6;
+//    msg_TX_mc_command.field = field_TX_mc_command;
+//    msg_TX_mc_command.data = data_TX_torque;
+    HAL_CAN_AddTxMessage(&hcan1, &TxHeader, data_TX_torque, &TxMailbox);
 }
 
 
 void can_tx_disable_MC() {
     uint8_t data_TX_disable_mc[] = { 0, 0, 0, 0, 0, 0, 0 };
 
-    msg_TX_mc_command.field = field_TX_mc_command;
-    msg_TX_mc_command.data = data_TX_disable_mc;
-    HAL_CAN_AddTxMessage(CAN1_TX_TXQ, &msg_TX_mc_command);
+    TxHeader.IDE = CAN_ID_STD;
+    TxHeader.StdId = TORQUE_REQUEST;
+    TxHeader.RTR = CAN_RTR_DATA;
+    TxHeader.DLC = 6;
+    HAL_CAN_AddTxMessage(&hcan1, &TxHeader, data_TX_disable_mc, &TxMailbox);
 }
 

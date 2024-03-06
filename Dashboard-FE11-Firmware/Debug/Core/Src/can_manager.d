@@ -1,5 +1,5 @@
 Core/Src/can_manager.o: ../Core/Src/can_manager.c \
- ../Core/Src/can_manager.h \
+ ../Core/Inc/can_manager.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
@@ -35,8 +35,8 @@ Core/Src/can_manager.o: ../Core/Src/can_manager.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Core/Src/fsm.h ../Core/Src/sensors.h ../Core/Src/config.h
-../Core/Src/can_manager.h:
+ ../Core/Inc/fsm.h ../Core/Inc/sensors.h ../Core/Inc/config.h
+../Core/Inc/can_manager.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h:
@@ -72,6 +72,6 @@ Core/Src/can_manager.o: ../Core/Src/can_manager.c \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
-../Core/Src/fsm.h:
-../Core/Src/sensors.h:
-../Core/Src/config.h:
+../Core/Inc/fsm.h:
+../Core/Inc/sensors.h:
+../Core/Inc/config.h:

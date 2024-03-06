@@ -40,7 +40,7 @@ uint32_t TxMailbox;
 CAN_TxHeaderTypeDef TxHeader;
 uint8_t VCU_STATE_MSG[8];
 uint32_t TxMailbox;
-uint32_t RxFifo[];
+uint32_t RxFifo[8];
 void can_init();
 void can_receive();
 void can_tx_vcu_state();

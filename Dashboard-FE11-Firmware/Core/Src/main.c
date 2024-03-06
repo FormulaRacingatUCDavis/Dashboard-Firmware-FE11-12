@@ -46,6 +46,8 @@ ADC_HandleTypeDef hadc3;
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
 
+CAN_RxHeaderTypeDef RxHeader;
+
 MMC_HandleTypeDef hmmc1;
 
 TIM_HandleTypeDef htim2;
@@ -55,7 +57,10 @@ UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
 
 /* USER CODE BEGIN PV */
-
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+	HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, RxHeader, RxHeader);
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+}
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

@@ -6,6 +6,8 @@
  */
 
 #include "uart.h"
+#include <stdio.h>
+#include <stdint.h>
 
 extern volatile state_t state;
 extern volatile error_t error;

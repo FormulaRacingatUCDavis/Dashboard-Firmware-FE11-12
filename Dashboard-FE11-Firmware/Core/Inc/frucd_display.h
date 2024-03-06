@@ -4,7 +4,6 @@
  *
  * ========================================
 */
-#include <project.h>
 #include <stdio.h>
 #include "data.h"
 #include "ugui.h"

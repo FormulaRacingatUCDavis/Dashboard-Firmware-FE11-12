@@ -19,7 +19,7 @@
 #ifndef __UGUI_H
 #define __UGUI_H
 
-#include "project.h"
+
 #include "ugui_config.h"
 
 
