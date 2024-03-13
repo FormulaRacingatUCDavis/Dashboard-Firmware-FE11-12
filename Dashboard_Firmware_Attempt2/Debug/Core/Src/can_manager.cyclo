@@ -1,0 +1,4 @@
+../Core/Src/can_manager.c:24:6:save_can_rx_data	17
+../Core/Src/can_manager.c:82:6:can_tx_vcu_state	2
+../Core/Src/can_manager.c:104:6:can_tx_torque_request	3
+../Core/Src/can_manager.c:136:6:can_tx_disable_MC	2
