@@ -18,19 +18,18 @@ unsigned int discrepancy_timer_ms = 0;
 const uint8_t THROTTLE_MULTIPLIER = 100;
 const uint8_t THROTTLE_MAP[8] = { 95, 71, 59, 47, 35, 23, 11, 5 };
 
-uint16_t getConversion(/*ADC1_CHANNEL*/ int channel){
-//    uint16_t conversion;
-//    ADC1_Enable();
-//    ADC1_ChannelSelect(channel);
-//    ADC1_SoftwareTriggerEnable();
-//    //Provide Delay
-//    __delay_ms(1);
-//    ADC1_SoftwareTriggerDisable();
-//    while(!ADC1_IsConversionComplete(channel));
-//    conversion = ADC1_ConversionResultGet(channel);
-//    ADC1_Disable();
-//    return conversion;
-	return 1;
+uint32_t get_adc_conversion(ADC_HandleTypeDef *hadc1) {
+	uint32_t conversion;
+
+	HAL_ADC_Start(hadc1);
+
+	// Wait for the conversion to complete
+	HAL_ADC_PollForConversion(hadc1, HAL_MAX_DELAY);
+
+	// Get the ADC value
+	conversion = HAL_ADC_GetValue(hadc1);
+
+	return conversion;
 }
 
 

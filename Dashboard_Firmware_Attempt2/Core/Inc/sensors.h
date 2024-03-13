@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "stm32f7xx_hal.h"
+
 #include "config.h"
 #include "fsm.h"
 
@@ -47,7 +49,7 @@ extern CALIBRATED_SENSOR_t brake;
 extern unsigned int discrepancy_timer_ms;
 
 //function prototypes
-//uint16_t getConversion(ADC1_CHANNEL channel);
+uint32_t get_adc_conversion(ADC_HandleTypeDef *hadc1);
 void run_calibration();
 void update_sensor_vals();
 
