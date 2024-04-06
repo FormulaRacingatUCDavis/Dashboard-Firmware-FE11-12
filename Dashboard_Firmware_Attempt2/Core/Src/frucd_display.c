@@ -44,6 +44,12 @@ TEXTBOX_CONFIG bms_temp_box = {
 
 TEXTBOX_CONFIG state_box;
 
+TEXTBOX_CONFIG glv_v_box = {
+		.grn_ylw_cutoff = 1150,
+		.ylw_org_cutoff = 1100,
+		.org_red_cutoff = 1050,
+		.units = 'V'};
+
 bool debug_mode = false;
 UG_GUI gui1963;
 
@@ -52,6 +58,7 @@ UG_GUI gui1963;
 void draw_soc(uint16_t soc);
 void draw_bms_temp(uint16_t temp);
 void draw_state(uint8_t state, uint16_t bms_status);
+void draw_glv_v(uint32_t glv_v);
 void draw_value_textbox(TEXTBOX_CONFIG* cfg, uint16_t value);
 void draw_textbox(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str_len);
 UG_COLOR value_to_color(TEXTBOX_CONFIG cfg, uint16_t value);
@@ -127,7 +134,7 @@ void Display_DriveTemplate()
     // draw labels
     UG_PutString(68, 10, "PACK SOC");
     UG_PutString(297, 10, "MAX PACK T");
-    UG_PutString(5, 180, "STATE:");
+    UG_PutString(30, 180, "STATE:");
     UG_PutString(275, 180, "GLV V:");
 
     // setup textbox configs
@@ -147,24 +154,33 @@ void Display_DriveTemplate()
 	bms_temp_box.last_color = C_BLACK;  // force box redraw
 	bms_temp_box.last_value = 255;
 
-	state_box.box_x1 = 20;
+	state_box.box_x1 = 30;
 	state_box.box_y1 = 200;
-	state_box.box_x2 = 200;
+	state_box.box_x2 = 210;
 	state_box.box_y2 = 230;
 	state_box.font = FONT_12X16;
 	state_box.last_color = C_BLACK;  // force box redraw
+
+	glv_v_box.box_x1 = 270;
+	glv_v_box.box_y1 = 200;
+	glv_v_box.box_x2 = 450;
+	glv_v_box.box_y2 = 230;
+	glv_v_box.font = FONT_12X16;
+	glv_v_box.last_color = C_BLACK;  // force box redraw
 }
 
 void Display_Update()
 {
 	static uint8_t soc = 0;
+	static uint32_t glv_v = 0;
 	soc = soc+1 ;
+	glv_v+=1;
 
     draw_soc(soc);
     draw_bms_temp(soc);
     draw_state(soc, 0);
+    draw_glv_v(glv_v);
 }
-
 
 
 void draw_soc(uint16_t soc)
@@ -307,6 +323,26 @@ void draw_state(uint8_t state, uint16_t bms_status)
 }
 
 
+void draw_glv_v(uint32_t data) {
+    // translate from voltage divider measurement to true voltage
+    // y = 0.4295x + 18.254
+    data *= 859;
+    data /= 2000; // 0.4295
+    data += 18;
+    UG_COLOR color;
+    if (data > 1150) {
+        color = C_GREEN;
+    } else if (data > 1100) {
+        color = C_YELLOW;
+    } else {
+    	color = C_RED;
+    }
+
+    char str[6];
+    sprintf(str, "%ld", data);
+    draw_textbox(&glv_v_box, color, str, 11);
+}
+
 
 
 UG_COLOR value_to_color(TEXTBOX_CONFIG cfg, uint16_t value)
@@ -375,7 +411,6 @@ void draw_textbox(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str
 
     if(color != cfg->last_color)
     {
-    	color = C_WHITE;
         UG_FillFrame(cfg->box_x1, cfg->box_y1, cfg->box_x2, cfg->box_y2, color);
         cfg->last_color = color;
     }

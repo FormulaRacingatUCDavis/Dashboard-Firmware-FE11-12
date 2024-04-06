@@ -48,6 +48,7 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
+DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
@@ -83,7 +84,7 @@ unsigned int precharge_timer_ms = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_CAN1_Init(void);
+static void MX_DMA_Init(void);
 static void MX_CAN2_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 static void MX_ADC1_Init(void);
@@ -93,6 +94,7 @@ static void MX_TIM4_Init(void);
 static void MX_UART4_Init(void);
 static void MX_UART7_Init(void);
 static void MX_FMC_Init(void);
+static void MX_CAN1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -183,9 +185,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_CAN1_Init();
+  MX_DMA_Init();
   MX_CAN2_Init();
-  MX_SDMMC1_SD_Init();
+//  MX_SDMMC1_SD_Init();
   MX_ADC1_Init();
   MX_ADC3_Init();
   MX_TIM2_Init();
@@ -193,20 +195,18 @@ int main(void)
   MX_UART4_Init();
   MX_UART7_Init();
   MX_FMC_Init();
+  MX_CAN1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
   init_sensors();
 
   Display_Init();
-  UG_FontSelect(&FONT_32X53);
+  UG_FontSelect(&FONT_12X16);
   UG_SetBackcolor(C_BLACK);
-  UG_SetForecolor(C_WHITE);
-
+  UG_SetForecolor(C_YELLOW);
   Display_CalibrateScreen();
-  HAL_Delay(5000);
-
-//  Display_DriveTemplate();
+  Display_DriveTemplate();
 
   /* USER CODE END 2 */
 
@@ -214,13 +214,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	  UG_PutString(0, 0, "Hello");
-	  UG_PutColorString(50, 50, "It's working", C_RED, C_WHITE);
-	  UG_PutColorString(0, 110, "still working", C_BLACK, C_WHITE);
-	  HAL_Delay(1000);
-
-
+	  Display_Update();
+	  HAL_Delay(100);
 
 //	  update_sensor_vals();
 //
@@ -835,6 +830,22 @@ static void MX_UART7_Init(void)
   /* USER CODE BEGIN UART7_Init 2 */
 
   /* USER CODE END UART7_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
 }
 

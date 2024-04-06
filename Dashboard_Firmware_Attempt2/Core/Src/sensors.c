@@ -44,17 +44,17 @@ void run_calibration() {
 }
 
 void update_sensor_vals() {
-    // APPS1 = pin8 = RA0
-    throttle1.raw = get_adc_conversion(APPS1);
-    update_percent(&throttle1);
-    // APPS2 = pin9 = RA1
-    throttle2.raw = get_adc_conversion(APPS2);
-    update_percent(&throttle2);
-    // BSE1 = pin11 = RA3
-    brake.raw = get_adc_conversion(BSE1);
-    update_percent(&brake);
-    // BSE2 = pin12 = RA4
-    brake2.raw = get_adc_conversion(BSE2);
+//    // APPS1 = pin8 = RA0
+//    throttle1.raw = get_adc_conversion(APPS1);
+//    update_percent(&throttle1);
+//    // APPS2 = pin9 = RA1
+//    throttle2.raw = get_adc_conversion(APPS2);
+//    update_percent(&throttle2);
+//    // BSE1 = pin11 = RA3
+//    brake.raw = get_adc_conversion(BSE1);
+//    update_percent(&brake);
+//    // BSE2 = pin12 = RA4
+//    brake2.raw = get_adc_conversion(BSE2);
 
     /*
      * T.4.2.5 in FSAE 2022 rulebook
