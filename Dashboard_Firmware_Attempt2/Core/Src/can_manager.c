@@ -19,6 +19,16 @@ volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
 
 
+CAN_RxHeaderTypeDef RxHeader;
+uint8_t RxData[8];
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
+	save_can_rx_data(RxHeader, RxData);
+}
+
+
 /************ CAN RX ************/
 
 void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
@@ -86,11 +96,12 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	TxHeader.DLC = 6;
 	uint8_t data_tx_state[6] = {
         0,
-        0,
-        0,
-        0,
+        hv_requested(),
+        throttle1.percent,
+        throttle2.percent,
+		brake.percent,
         one_byte_state(),
-        braking()
+
     };
 
     if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_state, &TxMailbox) != HAL_OK)

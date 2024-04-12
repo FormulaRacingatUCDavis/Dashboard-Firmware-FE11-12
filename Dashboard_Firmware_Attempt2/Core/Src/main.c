@@ -27,6 +27,7 @@
 #include "sensors.h"
 #include "fsm.h"
 #include "can_manager.h"
+#include "traction_control.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +58,7 @@ SD_HandleTypeDef hsd1;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
@@ -64,16 +66,6 @@ UART_HandleTypeDef huart7;
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
-
-//extern volatile state_t state;
-//extern volatile error_t error;
-//extern volatile uint8_t mc_lockout;
-//extern volatile uint16_t capacitor_volt;
-//extern volatile uint8_t shutdown_flags;
-//extern volatile uint8_t switches;
-//extern volatile uint8_t estop_flags;
-//extern unsigned int discrepancy_timer_ms;
-//extern volatile uint8_t mc_fault;
 
 // Keeps track of timer waiting for pre-charging
 unsigned int precharge_timer_ms = 0;
@@ -95,6 +87,7 @@ static void MX_UART4_Init(void);
 static void MX_UART7_Init(void);
 static void MX_FMC_Init(void);
 static void MX_CAN1_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -118,42 +111,40 @@ static void MX_CAN1_Init(void);
  */
 
 uint8_t traction_control_enable() {
-//    return HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
-	return 0;
+    return HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
 }
 
 uint8_t hv_switch() {
-//	return HAL_GPIO_ReadPin(GPIOG, HV_REQUEST_Pin);
-	return 0;
+	return HAL_GPIO_ReadPin(GPIOG, HV_REQUEST_Pin);
 }
 
 uint8_t drive_switch() {
-//	return HAL_GPIO_ReadPin(GPIOG, DRIVE_REQUEST_Pin);
-	return 0;
+	return HAL_GPIO_ReadPin(GPIOG, DRIVE_REQUEST_Pin);
 }
 
 
 uint8_t shutdown_closed() {
-//    if (estop_flags) return 0;
-//    return (shutdown_flags & 0b00111000) == 0b00111000;
-	return 0;
+    if (estop_flags) return 0;
+    return (shutdown_flags & 0b00111000) == 0b00111000;
 }
 
+// TEST
 
-/** CAN **/
+#define ADC_BUFLEN 3
+uint32_t ADC_buf[ADC_BUFLEN];
+uint8_t ADC_flag = 0;
 
-CAN_RxHeaderTypeDef RxHeader;
-uint8_t RxData[8];
-
-// this has to be in main I think?
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData);
-	save_can_rx_data(RxHeader, RxData);
-	HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+    ADC_flag = 1;
 }
 
 
+CAN_TxHeaderTypeDef   TxHeader2;
+uint32_t              TxMailbox2;
+uint8_t TxData2[8];
+
+// TEST END
 
 /* USER CODE END 0 */
 
@@ -187,7 +178,7 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_CAN2_Init();
-//  MX_SDMMC1_SD_Init();
+  //MX_SDMMC1_SD_Init();
   MX_ADC1_Init();
   MX_ADC3_Init();
   MX_TIM2_Init();
@@ -197,7 +188,11 @@ int main(void)
   MX_FMC_Init();
   MX_CAN1_Init();
   MX_USB_DEVICE_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+
+//  HAL_ADCEx_Calibration_Start(&hadc1);
+  HAL_ADC_Start_DMA(&hadc1, ADC_buf, ADC_BUFLEN);
 
   init_sensors();
 
@@ -208,190 +203,220 @@ int main(void)
   Display_CalibrateScreen();
   Display_DriveTemplate();
 
+  HAL_TIM_Base_Start(&htim6);
+
+  // TEST
+
+  TxHeader2.IDE = CAN_ID_STD;
+	TxHeader2.StdId = 0x66;
+	TxHeader2.RTR = CAN_RTR_DATA;
+	TxHeader2.DLC = 8;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Display_Update();
-	  HAL_Delay(100);
 
-//	  update_sensor_vals();
-//
-//	  can_tx_vcu_state();
-//
-//	  if (!mc_lockout) {
-//		  can_tx_torque_request();
-//	  }
-//
-//	  // Traction control
-//	  if (traction_control_enable()) {
-//		  traction_control_PID();
-//	  }
-//
-//	  // If shutdown circuit opens in any state
-//	  if (!shutdown_closed()) {
-//		  report_fault(SHUTDOWN_CIRCUIT_OPEN);
-//	  }
-//
-//	  //if hard BSPD trips in any state
-// //	  if (!HAL_GPIO_ReadPin(BSPD_LATCH){
-// //		  report_fault(HARD_BSPD);
-// //	  }
-//
-//	  if (mc_fault) {
-//		  report_fault(MC_FAULT);
-//	  }
-//
-//	  switch (state) {
-//		  case STARTUP:
-//			  run_calibration();
-//
-//			  if (!hv_switch() && !drive_switch()) {
-//				  change_state(LV);
-//			  }
-//			  break;
-//		  case LV:
-//			  run_calibration();
-//
-//			  if (drive_switch()) {
-//				  // Drive switch should not be enabled during LV
-//				  report_fault(DRIVE_REQUEST_FROM_LV);
-//				  break;
-//			  }
-//
-//			  if (hv_switch()) {
-//				  // HV switch was flipped
-//				  // check if APPS pedal was calibrated
-//				  if (sensors_calibrated()) {
-//					  // Start charging the car to high voltage state
-//					  change_state(PRECHARGING);
-//				  } else {
-//					  report_fault(UNCALIBRATED);
-//				  }
-//			  }
-//
-//			  break;
-//		  case PRECHARGING:
-//			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
-//				  // Finished charging to HV on time
-//				  change_state(HV_ENABLED);
-//				  break;
-//			  }
-//			  if (!hv_switch()) {
-//				  // Driver flipped off HV switch
-//				  change_state(LV);
-//				  break;
-//			  }
-//			  if (drive_switch()) {
-//				  // Drive switch should not be enabled during PRECHARGING
-//				  report_fault(DRIVE_REQUEST_FROM_LV);
-//				  break;
-//			  }
-//			  break;
-//		  case HV_ENABLED:
-//			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
-//				  // Driver flipped off HV switch
-//				  change_state(LV);
-//				  break;
-//			  }
-//
-//			  if (drive_switch()) {
-//				  // Driver flipped on drive switch
-//				  // Need to press on pedal at the same time to go to drive
-//
-//				  if (brake_mashed()) {
-//					  change_state(DRIVE);
-//				  } else {
-//					  // Driver didn't press pedal
-//					  report_fault(BRAKE_NOT_PRESSED);
-//				  }
-//			  }
-//
-//			  break;
-//		  case DRIVE:
-//			  // CM200 safety feature: starts in lockout mode, disable message must be sent before enable (torque requests)
-//			  if (mc_lockout) {
-//				  can_tx_disable_MC();
-//			  }
-//
-//			  if (!drive_switch()) {
-//				  // Drive switch was flipped off
-//				  // Revert to HV
-//				  change_state(HV_ENABLED);
-//				 break;
-//			  }
-//
-//			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules || capacitor_volt < PRECHARGE_THRESHOLD) {
-//				  // HV switched flipped off, so can't drive
-//				  // or capacitor dropped below threshold
-//				  report_fault(HV_DISABLED_WHILE_DRIVING);
-//				  break;
-//			  }
-//
-//			  // ***** UNCOMMENT WHEN PEDALS WORK *****
-//			  if (brake_implausible()) {
-//				  report_fault(BRAKE_IMPLAUSIBLE);
-//			  }
-//
-//			  break;
-//		  case FAULT:
-//			  switch (error) {
-//				  case BRAKE_NOT_PRESSED:
-//					  if (!hv_switch())
-//						  change_state(LV);
-//
-//					  if (!drive_switch()) {
-//						  // reset drive switch and try again
-//						  change_state(HV_ENABLED);
-//					  }
-//					  break;
-//				  case SENSOR_DISCREPANCY:
-//					  // stop power to motors if discrepancy persists for >100ms
-//					  // see rule T.4.2.5 in FSAE 2022 rulebook
-//					  if (!drive_switch()) {
-//						  discrepancy_timer_ms = 0;
-//						  change_state(HV_ENABLED);
-//					  }
-//
-//					  if (!hv_switch())
-//						  report_fault(HV_DISABLED_WHILE_DRIVING);
-//
-//					  break;
-//				  case BRAKE_IMPLAUSIBLE:
-//					  if (!brake_implausible() && hv_switch() && drive_switch())
-//						  change_state(DRIVE);
-//
-//					  if (!hv_switch() && !drive_switch())
-//						  change_state(LV);
-//
-//					  if (!drive_switch())
-//						  change_state(HV_ENABLED);
-//
-//					  if (!hv_switch())
-//						  report_fault(HV_DISABLED_WHILE_DRIVING);
-//
-//					  break;
-//				  case SHUTDOWN_CIRCUIT_OPEN:
-//					  if (shutdown_closed()) {
-//						  change_state(LV);
-//					  }
-//					  break;
-//				  case HARD_BSPD:
-//					  //should not be recoverable, but let hardware decide this
-// //					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
-// //						  change_state(LV);
-// //			  		  }
-//
-//				  default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
-//					  if (!hv_switch() && !drive_switch()) {
-//						  change_state(LV);
-//					  }
-//					  break;
-//			  }
-//			  break;
-//	 	  }
+
+	  // TEST
+
+	  if (ADC_flag) {
+		  ADC_flag = 0;
+
+		  TxData2[0] = ADC_buf[0] & 0xff;
+		  TxData2[1] = (ADC_buf[0] & 0xff00) >> 8;
+		  TxData2[2] = (ADC_buf[0] & 0xff0000) >> 16;
+		  TxData2[3] = (ADC_buf[0] & 0xff000000) >> 24;
+
+		  TxData2[0] = ADC_buf[1] & 0xff;
+		  TxData2[1] = (ADC_buf[2] & 0xff00) >> 8;
+		  TxData2[2] = (ADC_buf[3] & 0xff0000) >> 16;
+		  TxData2[3] = (ADC_buf[4] & 0xff000000) >> 24;
+
+		  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {}
+	  }
+
+	  // TEST END
+
+	  Display_Update();
+
+	  update_sensor_vals();
+
+	  can_tx_vcu_state(&hcan1);
+
+	  if (!mc_lockout) {
+		  can_tx_torque_request(&hcan1);
+	  }
+
+	  // Traction control
+	  if (traction_control_enable()) {
+		  traction_control_PID();
+	  }
+
+	  // If shutdown circuit opens in any state
+	  if (!shutdown_closed()) {
+		  report_fault(SHUTDOWN_CIRCUIT_OPEN);
+	  }
+
+	  //if hard BSPD trips in any state
+ //	  if (!HAL_GPIO_ReadPin(BSPD_LATCH){
+ //		  report_fault(HARD_BSPD);
+ //	  }
+
+	  if (mc_fault) {
+		  report_fault(MC_FAULT);
+	  }
+
+	  switch (state) {
+		  case STARTUP:
+			  run_calibration();
+
+			  if (!hv_switch() && !drive_switch()) {
+				  change_state(LV);
+			  }
+			  break;
+		  case LV:
+			  run_calibration();
+
+			  if (drive_switch()) {
+				  // Drive switch should not be enabled during LV
+				  report_fault(DRIVE_REQUEST_FROM_LV);
+				  break;
+			  }
+
+			  if (hv_switch()) {
+				  // HV switch was flipped
+				  // check if APPS pedal was calibrated
+				  if (sensors_calibrated()) {
+					  // Start charging the car to high voltage state
+					  change_state(PRECHARGING);
+				  } else {
+					  report_fault(UNCALIBRATED);
+				  }
+			  }
+
+			  break;
+		  case PRECHARGING:
+			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
+				  // Finished charging to HV on time
+				  change_state(HV_ENABLED);
+				  break;
+			  }
+			  if (!hv_switch()) {
+				  // Driver flipped off HV switch
+				  change_state(LV);
+				  break;
+			  }
+			  if (drive_switch()) {
+				  // Drive switch should not be enabled during PRECHARGING
+				  report_fault(DRIVE_REQUEST_FROM_LV);
+				  break;
+			  }
+			  break;
+		  case HV_ENABLED:
+			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
+				  // Driver flipped off HV switch
+				  change_state(LV);
+				  break;
+			  }
+
+			  if (drive_switch()) {
+				  // Driver flipped on drive switch
+				  // Need to press on pedal at the same time to go to drive
+
+				  if (brake_mashed()) {
+					  change_state(DRIVE);
+				  } else {
+					  // Driver didn't press pedal
+					  report_fault(BRAKE_NOT_PRESSED);
+				  }
+			  }
+
+			  break;
+		  case DRIVE:
+			  // CM200 safety feature: starts in lockout mode, disable message must be sent before enable (torque requests)
+			  if (mc_lockout) {
+				  can_tx_disable_MC(&hcan1);
+			  }
+
+			  if (!drive_switch()) {
+				  // Drive switch was flipped off
+				  // Revert to HV
+				  change_state(HV_ENABLED);
+				 break;
+			  }
+
+			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules || capacitor_volt < PRECHARGE_THRESHOLD) {
+				  // HV switched flipped off, so can't drive
+				  // or capacitor dropped below threshold
+				  report_fault(HV_DISABLED_WHILE_DRIVING);
+				  break;
+			  }
+
+			  // ***** UNCOMMENT WHEN PEDALS WORK *****
+			  if (brake_implausible()) {
+				  report_fault(BRAKE_IMPLAUSIBLE);
+			  }
+
+			  break;
+		  case FAULT:
+			  switch (error) {
+				  case BRAKE_NOT_PRESSED:
+					  if (!hv_switch())
+						  change_state(LV);
+
+					  if (!drive_switch()) {
+						  // reset drive switch and try again
+						  change_state(HV_ENABLED);
+					  }
+					  break;
+				  case SENSOR_DISCREPANCY:
+					  // stop power to motors if discrepancy persists for >100ms
+					  // see rule T.4.2.5 in FSAE 2022 rulebook
+					  if (!drive_switch()) {
+						  discrepancy_timer_ms = 0;
+						  change_state(HV_ENABLED);
+					  }
+
+					  if (!hv_switch())
+						  report_fault(HV_DISABLED_WHILE_DRIVING);
+
+					  break;
+				  case BRAKE_IMPLAUSIBLE:
+					  if (!brake_implausible() && hv_switch() && drive_switch())
+						  change_state(DRIVE);
+
+					  if (!hv_switch() && !drive_switch())
+						  change_state(LV);
+
+					  if (!drive_switch())
+						  change_state(HV_ENABLED);
+
+					  if (!hv_switch())
+						  report_fault(HV_DISABLED_WHILE_DRIVING);
+
+					  break;
+				  case SHUTDOWN_CIRCUIT_OPEN:
+					  if (shutdown_closed()) {
+						  change_state(LV);
+					  }
+					  break;
+				  case HARD_BSPD:
+					  //should not be recoverable, but let hardware decide this
+ //					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
+ //						  change_state(LV);
+ //			  		  }
+
+				  default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
+					  if (!hv_switch() && !drive_switch()) {
+						  change_state(LV);
+					  }
+					  break;
+			  }
+			  break;
+	 	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -474,13 +499,13 @@ static void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T6_TRGO;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.NbrOfConversion = 3;
   hadc1.Init.DMAContinuousRequests = DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -493,6 +518,22 @@ static void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_10;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_3;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -574,8 +615,8 @@ static void MX_CAN1_Init(void)
   hcan1.Init.Prescaler = 18;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_3TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
@@ -764,6 +805,44 @@ static void MX_TIM4_Init(void)
 }
 
 /**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 7200;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 1000;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
   * @brief UART4 Initialization Function
   * @param None
   * @retval None
@@ -946,8 +1025,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(HEARTBEAT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BUTTON_2_Pin PG15 */
-  GPIO_InitStruct.Pin = BUTTON_2_Pin|GPIO_PIN_15;
+  /*Configure GPIO pins : BUTTON_4_Pin BUTTON_3_Pin BUTTON_2_Pin BUTTON_1_Pin
+                           HV_REQUEST_Pin DRIVE_REQUEST_Pin GASP_INTERRUPT_Pin */
+  GPIO_InitStruct.Pin = BUTTON_4_Pin|BUTTON_3_Pin|BUTTON_2_Pin|BUTTON_1_Pin
+                          |HV_REQUEST_Pin|DRIVE_REQUEST_Pin|GASP_INTERRUPT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);

@@ -12,9 +12,23 @@ CALIBRATED_SENSOR_t throttle1;
 CALIBRATED_SENSOR_t throttle2;
 CALIBRATED_SENSOR_t brake;
 
+
+
 /************ Timer ************/
 unsigned int discrepancy_timer_ms = 0;
 
+
+void init_sensors(){
+    throttle1.min = 0x7FFF;
+    throttle1.max = 0;
+    throttle1.range = 1;
+    throttle2.min = 0x7FFF;
+    throttle2.max = 0;
+    throttle2.range = 1;
+    brake.min = 0x7FFF;
+    brake.max = 0;
+    brake.range = 1;
+}
 
 // APPS
 uint8_t THROTTLE_MULTIPLIER = 100;
@@ -111,12 +125,10 @@ bool sensors_calibrated(){
 
 bool braking(){
     return brake.raw > BRAKE_LIGHT_THRESHOLD;
-	return false;
 }
 
 bool brake_mashed(){
     return brake.raw > RTD_BRAKE_THRESHOLD;
-	return false;
 }
 
 // check differential between the throttle sensors
@@ -165,15 +177,4 @@ uint16_t clamp(uint16_t in, uint16_t min, uint16_t max){
     return in;
 }
 
-void init_sensors(){
-    throttle1.min = 0x7FFF;
-    throttle1.max = 0;
-    throttle1.range = 1;
-    throttle2.min = 0x7FFF;
-    throttle2.max = 0;
-    throttle2.range = 1;
-    brake.min = 0x7FFF;
-    brake.max = 0;
-    brake.range = 1;
-}
 
