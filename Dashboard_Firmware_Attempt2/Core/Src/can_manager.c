@@ -164,7 +164,8 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan) {
 }
 
 void can_clear_fault(CAN_HandleTypeDef *hcan) {
-    uint8_t msg[] = {throttle1.raw << 8, 0xFF & throttle1.raw ,throttle2.raw << 8, 0xFF & throttle2.raw,brake.raw << 8, 0xFF & brake.raw,0};
+    //uint8_t msg[] = {throttle1.raw >> 8, 0xFF & throttle1.raw ,throttle2.raw >> 8, 0xFF & throttle2.raw, brake.raw >> 8, 0xFF & brake.raw,0};
+	uint8_t msg[] = {throttle1.min, throttle1.max ,throttle2.min, throttle2.max, brake.min, brake.max,0};
 
     TxHeader.IDE = CAN_ID_STD;
 	TxHeader.StdId = 0x111;

@@ -263,8 +263,6 @@ int main(void)
 //
 //	}
 
-	can_clear_fault(&hcan1);
-
   while (1)
   {
 
@@ -329,6 +327,12 @@ int main(void)
 //	  }
 
 	  if (state != DRIVE) can_tx_disable_MC(&hcan1);
+
+	  can_clear_fault(&hcan1);
+
+	  char * str;
+	  sprintf(str, "min1: %ld, max1: %ld, min2: %ld, max2: %ld, minb: %ld, maxb: %ld", throttle1.min, throttle1.max, throttle2.min, throttle2.max, brake.min, brake.max);
+	  UG_PutColorString(2, 3, str, fc, bc);
 
 	  switch (state) {
 		  case STARTUP:
