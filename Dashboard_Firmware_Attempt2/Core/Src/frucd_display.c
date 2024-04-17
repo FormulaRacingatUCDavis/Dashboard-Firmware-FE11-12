@@ -179,7 +179,7 @@ void Display_Update()
 
     draw_soc(soc);
     draw_bms_temp(PACK_TEMP);
-    draw_state(state, bms_status);
+    draw_state(one_byte_state(), bms_status);
     draw_glv_v(glv_v);
 }
 
