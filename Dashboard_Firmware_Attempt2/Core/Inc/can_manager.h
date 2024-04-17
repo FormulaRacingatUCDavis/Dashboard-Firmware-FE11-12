@@ -20,6 +20,7 @@ typedef enum {
     //BSPD_FLAGS = 0x0c1,
     VEHICLE_STATE = 0x766,
     TORQUE_REQUEST = 0x0C0,
+	CLEAR_FAULT = 0x0C1,
     BMS_STATUS_MSG = 0x380,
     PEI_CURRENT_SHUTDOWN = 0x387,
     MC_VOLTAGE_INFO = 0x0A7,
@@ -40,6 +41,8 @@ extern volatile uint8_t estop_flags;
 extern volatile uint8_t switches;
 extern volatile uint8_t PACK_TEMP;
 extern volatile uint8_t mc_fault;
+extern volatile uint8_t soc;
+extern volatile uint16_t bms_status;
 
 // From TCAN
 extern volatile uint16_t front_right_wheel_speed;
@@ -51,7 +54,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]);
 void can_tx_vcu_state(CAN_HandleTypeDef *hcan);
 void can_tx_torque_request(CAN_HandleTypeDef *hcan);
 void can_tx_disable_MC(CAN_HandleTypeDef *hcan);
-
+void can_clear_fault(CAN_HandleTypeDef *hcan);
 
 #endif /* SRC_CAN_MANAGER_H_ */
 

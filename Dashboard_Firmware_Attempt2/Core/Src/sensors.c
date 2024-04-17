@@ -34,16 +34,67 @@ void init_sensors(){
 uint8_t THROTTLE_MULTIPLIER = 100;
 const uint8_t THROTTLE_MAP[8] = { 95, 71, 59, 47, 35, 23, 11, 5 };
 
-uint32_t get_adc_conversion(ADC_HandleTypeDef *hadc1) {
+void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+    switch (channel)
+    {
+        case APPS1:
+            sConfig.Channel = ADC_CHANNEL_10;
+			sConfig.Rank = 1;
+
+			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+			{
+			}
+			break;
+
+        case APPS2:
+			sConfig.Channel = ADC_CHANNEL_8;
+			sConfig.Rank = 1;
+			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+			{
+			}
+			break;
+        case BSE:
+			sConfig.Channel = ADC_CHANNEL_15;
+			sConfig.Rank = 1;
+			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+			{
+			}
+			break;
+        case KNOB1:
+			sConfig.Channel = ADC_CHANNEL_13;
+			sConfig.Rank = 1;
+			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+			{
+			}
+			break;
+        case KNOB2:
+			sConfig.Channel = ADC_CHANNEL_12;
+			sConfig.Rank = 1;
+			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+			{
+			}
+			break;
+        default:
+            break;
+    }
+}
+
+uint32_t get_adc_conversion(ADC_HandleTypeDef *hadc, ADC_CHAN channel) {
+
+	select_adc_channel(hadc, channel);
+
 	uint32_t conversion;
 
-	HAL_ADC_Start(hadc1);
+	HAL_ADC_Start(hadc);
 
 	// Wait for the conversion to complete
-	HAL_ADC_PollForConversion(hadc1, HAL_MAX_DELAY);
+	HAL_ADC_PollForConversion(hadc, HAL_MAX_DELAY);
 
 	// Get the ADC value
-	conversion = HAL_ADC_GetValue(hadc1);
+	conversion = HAL_ADC_GetValue(hadc);
 
 	return conversion;
 }
@@ -57,18 +108,14 @@ void run_calibration() {
     update_minmax(&brake);
 }
 
-void update_sensor_vals() {
-//    // APPS1 = pin8 = RA0
-//    throttle1.raw = get_adc_conversion(APPS1);
-//    update_percent(&throttle1);
-//    // APPS2 = pin9 = RA1
-//    throttle2.raw = get_adc_conversion(APPS2);
-//    update_percent(&throttle2);
-//    // BSE1 = pin11 = RA3
-//    brake.raw = get_adc_conversion(BSE1);
-//    update_percent(&brake);
-//    // BSE2 = pin12 = RA4
-//    brake2.raw = get_adc_conversion(BSE2);
+void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
+    throttle1.raw = get_adc_conversion(hadc1, APPS1);
+    update_percent(&throttle1);
+    throttle2.raw = get_adc_conversion(hadc3, APPS2);
+    update_percent(&throttle2);
+    brake.raw = get_adc_conversion(hadc3, BSE);
+    update_percent(&brake);
+
 
     /*
      * T.4.2.5 in FSAE 2022 rulebook

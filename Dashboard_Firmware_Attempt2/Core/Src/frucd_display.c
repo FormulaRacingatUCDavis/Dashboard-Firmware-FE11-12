@@ -13,6 +13,8 @@
  * ========================================
 */
 #include "frucd_display.h"
+#include "can_manager.h"
+#include "fsm.h"
 
 typedef struct {
     uint16_t box_x1;
@@ -171,14 +173,13 @@ void Display_DriveTemplate()
 
 void Display_Update()
 {
-	static uint8_t soc = 0;
-	static uint32_t glv_v = 0;
-	soc = soc+1 ;
-	glv_v+=1;
+	static uint32_t glv_v = 99999;
+//	soc = soc+1 ;
+//	glv_v+=1;
 
     draw_soc(soc);
-    draw_bms_temp(soc);
-    draw_state(soc, 0);
+    draw_bms_temp(PACK_TEMP);
+    draw_state(state, bms_status);
     draw_glv_v(glv_v);
 }
 

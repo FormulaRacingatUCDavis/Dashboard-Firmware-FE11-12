@@ -18,16 +18,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-#include "frucd_display.h"
+#include "stdio.h"
+#include "inttypes.h"
+#include "can_manager.h"
 #include "sensors.h"
 #include "fsm.h"
-#include "can_manager.h"
 #include "traction_control.h"
+#include "frucd_display.h"
+
 
 /* USER CODE END Includes */
 
@@ -50,6 +51,7 @@
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 DMA_HandleTypeDef hdma_adc1;
+DMA_HandleTypeDef hdma_adc3;
 
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
@@ -62,6 +64,7 @@ TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
+UART_HandleTypeDef huart3;
 
 SRAM_HandleTypeDef hsram1;
 
@@ -88,6 +91,7 @@ static void MX_UART7_Init(void);
 static void MX_FMC_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -110,16 +114,23 @@ static void MX_TIM6_Init(void);
  *  - Dr = switches & 0b1
  */
 
+uint16_t val1;
+uint16_t val2;
+uint16_t val3;
+
 uint8_t traction_control_enable() {
-    return HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
+	val1 = HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
+	return val1;
 }
 
 uint8_t hv_switch() {
-	return HAL_GPIO_ReadPin(GPIOG, HV_REQUEST_Pin);
+	val2 = HAL_GPIO_ReadPin(GPIOG, HV_REQUEST_Pin);
+	return val2;
 }
 
 uint8_t drive_switch() {
-	return HAL_GPIO_ReadPin(GPIOG, DRIVE_REQUEST_Pin);
+	val3 = HAL_GPIO_ReadPin(GPIOG, DRIVE_REQUEST_Pin);
+	return val3;
 }
 
 
@@ -130,19 +141,19 @@ uint8_t shutdown_closed() {
 
 // TEST
 
-#define ADC_BUFLEN 3
-uint32_t ADC_buf[ADC_BUFLEN];
-uint8_t ADC_flag = 0;
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-    ADC_flag = 1;
-}
-
+//#define ADC_BUFLEN 5
+//uint32_t ADC_buf[ADC_BUFLEN];
+//uint8_t ADC_flag = 0;
+//
+//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+//{
+//    ADC_flag = 1;
+//}
+//
 
 CAN_TxHeaderTypeDef   TxHeader2;
 uint32_t              TxMailbox2;
-uint8_t TxData2[8];
+uint8_t TxData2[] = {0,0,0,0,0,0,0,0};
 
 // TEST END
 
@@ -187,12 +198,11 @@ int main(void)
   MX_UART7_Init();
   MX_FMC_Init();
   MX_CAN1_Init();
-  MX_USB_DEVICE_Init();
   MX_TIM6_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
-//  HAL_ADCEx_Calibration_Start(&hadc1);
-  HAL_ADC_Start_DMA(&hadc1, ADC_buf, ADC_BUFLEN);
+//  HAL_ADC_Start_DMA(&hadc1, ADC_buf, ADC_BUFLEN);
 
   init_sensors();
 
@@ -216,33 +226,82 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
+//	while (1) {
+//
+//		uint32_t conversion = 0;
+//
+//		if (HAL_ADC_Start(&hadc3) != HAL_OK) {
+//			Error_Handler();
+//		}
+//
+//		// Wait for the conversion to complete
+//		if (HAL_ADC_PollForConversion(&hadc3, 20)) {
+//			Error_Handler();
+//		}
+//
+//		// Get the ADC value
+//		conversion = HAL_ADC_GetValue(&hadc3);
+//
+//		// stop adc
+//		//HAL_ADC_Stop(&hadc3);
+//
+//		TxData2[0] = conversion & 0xff;
+//		  TxData2[1] = (conversion & 0xff00) >> 8;
+//		  TxData2[2] = (conversion & 0xff0000) >> 16;
+//		  TxData2[3] = (conversion & 0xff000000) >> 24;
+//
+////		if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {
+////			int a = 0;
+////		}
+//		  //UG_PutColorString(10, 10, "st", C_BLACK, C_GREEN);
+//
+//		  char * str = "h";
+//		  sprintf(str, "adc: %lu", conversion);
+//		  UG_PutColorString(10, 10, str, C_BLACK, C_GREEN);
+//
+//	}
+
+	can_clear_fault(&hcan1);
+
   while (1)
   {
 
 
 	  // TEST
 
-	  if (ADC_flag) {
-		  ADC_flag = 0;
+//	  char * testStr = "testt\n";
+//	  HAL_UART_Transmit(&huart3, testStr, sizeof(testStr), 30);
 
-		  TxData2[0] = ADC_buf[0] & 0xff;
-		  TxData2[1] = (ADC_buf[0] & 0xff00) >> 8;
-		  TxData2[2] = (ADC_buf[0] & 0xff0000) >> 16;
-		  TxData2[3] = (ADC_buf[0] & 0xff000000) >> 24;
+//	  if (ADC_flag) {
+////		  ADC_flag = 0;
 
-		  TxData2[0] = ADC_buf[1] & 0xff;
-		  TxData2[1] = (ADC_buf[2] & 0xff00) >> 8;
-		  TxData2[2] = (ADC_buf[3] & 0xff0000) >> 16;
-		  TxData2[3] = (ADC_buf[4] & 0xff000000) >> 24;
+//		  TxData2[0] = ADC_buf[0] & 0xff;
+//		  TxData2[1] = (ADC_buf[0] & 0xff00) >> 8;
+//		  TxData2[2] = (ADC_buf[0] & 0xff0000) >> 16;
+//		  TxData2[3] = (ADC_buf[0] & 0xff000000) >> 24;
+//
+//		  TxData2[4] = ADC_buf[1] & 0xff;
+//		  TxData2[5] = (ADC_buf[1] & 0xff00) >> 8;
+//		  TxData2[6] = (ADC_buf[1] & 0xff0000) >> 16;
+//		  TxData2[7] = (ADC_buf[1] & 0xff000000) >> 24;
+//
+//		  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {}
+//	  }
 
-		  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {}
-	  }
+
+
+	  //if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {}
+
 
 	  // TEST END
 
+
+
 	  Display_Update();
 
-	  update_sensor_vals();
+	  update_sensor_vals(&hadc1, &hadc3);
 
 	  can_tx_vcu_state(&hcan1);
 
@@ -265,9 +324,11 @@ int main(void)
  //		  report_fault(HARD_BSPD);
  //	  }
 
-	  if (mc_fault) {
-		  report_fault(MC_FAULT);
-	  }
+//	  if (mc_fault) {
+//		  report_fault(MC_FAULT);
+//	  }
+
+	  if (state != DRIVE) can_tx_disable_MC(&hcan1);
 
 	  switch (state) {
 		  case STARTUP:
@@ -355,7 +416,6 @@ int main(void)
 				  break;
 			  }
 
-			  // ***** UNCOMMENT WHEN PEDALS WORK *****
 			  if (brake_implausible()) {
 				  report_fault(BRAKE_IMPLAUSIBLE);
 			  }
@@ -408,7 +468,7 @@ int main(void)
  //					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
  //						  change_state(LV);
  //			  		  }
-
+					  break;
 				  default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
 					  if (!hv_switch() && !drive_switch()) {
 						  change_state(LV);
@@ -488,7 +548,7 @@ static void MX_ADC1_Init(void)
 
   /* USER CODE END ADC1_Init 0 */
 
-  ADC_ChannelConfTypeDef sConfig = {0};
+//  ADC_ChannelConfTypeDef sConfig = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
 
@@ -502,8 +562,8 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T6_TRGO;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 3;
   hadc1.Init.DMAContinuousRequests = DISABLE;
@@ -513,34 +573,34 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
 
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_10;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Rank = ADC_REGULAR_RANK_3;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
+//  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+//  */
+//  sConfig.Channel = ADC_CHANNEL_10;
+//  sConfig.Rank = ADC_REGULAR_RANK_1;
+//  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+//  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
+//
+//  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+//  */
+//  sConfig.Rank = ADC_REGULAR_RANK_2;
+//  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
+//
+//  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+//  */
+//  sConfig.Rank = ADC_REGULAR_RANK_3;
+//  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
+//  /* USER CODE BEGIN ADC1_Init 2 */
+//
+//  /* USER CODE END ADC1_Init 2 */
 
 }
 
@@ -567,13 +627,13 @@ static void MX_ADC3_Init(void)
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc3.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc3.Init.ContinuousConvMode = DISABLE;
   hadc3.Init.DiscontinuousConvMode = DISABLE;
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc3.Init.NbrOfConversion = 1;
+  hadc3.Init.NbrOfConversion = 2;
   hadc3.Init.DMAContinuousRequests = DISABLE;
   hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
@@ -586,6 +646,14 @@ static void MX_ADC3_Init(void)
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -629,6 +697,40 @@ static void MX_CAN1_Init(void)
   }
   /* USER CODE BEGIN CAN1_Init 2 */
 
+  /*##-2- Configure the CAN Filter ###########################################*/
+    CAN_FilterTypeDef canfilterconfig;
+
+    canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+    canfilterconfig.FilterBank = 18;  // which filter bank to use from the assigned ones
+    canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+    canfilterconfig.FilterIdHigh = 0x0;
+    canfilterconfig.FilterIdLow = 0x0;
+    canfilterconfig.FilterMaskIdHigh = 0x0;
+    canfilterconfig.FilterMaskIdLow = 0x0000;
+    canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+    canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+    canfilterconfig.SlaveStartFilterBank = 20;  // how many filters to assign to the CAN1 (master can)
+
+  	if (HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig) != HAL_OK)
+  	{
+  	  /* Filter configuration Error */
+  	  Error_Handler();
+  	}
+
+  	/*##-3- Start the CAN peripheral ###########################################*/
+  	if (HAL_CAN_Start(&hcan1) != HAL_OK)
+  	{
+  	  /* Start Error */
+  	  Error_Handler();
+  	}
+
+  	/*##-4- Activate CAN RX notification #######################################*/
+  	if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+  	{
+  	  /* Notification Error */
+  	  Error_Handler();
+  	}
+
   /* USER CODE END CAN1_Init 2 */
 
 }
@@ -652,8 +754,8 @@ static void MX_CAN2_Init(void)
   hcan2.Init.Prescaler = 18;
   hcan2.Init.Mode = CAN_MODE_NORMAL;
   hcan2.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan2.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan2.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan2.Init.TimeSeg1 = CAN_BS1_2TQ;
+  hcan2.Init.TimeSeg2 = CAN_BS2_3TQ;
   hcan2.Init.TimeTriggeredMode = DISABLE;
   hcan2.Init.AutoBusOff = DISABLE;
   hcan2.Init.AutoWakeUp = DISABLE;
@@ -913,6 +1015,41 @@ static void MX_UART7_Init(void)
 }
 
 /**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 115200;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -925,6 +1062,9 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+  /* DMA2_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 
 }
 
@@ -1025,6 +1165,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(HEARTBEAT_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : SHORTED_TO_PB11_Pin SHORTED_TO_PB10_Pin BAT_12V_MEASURE_Pin */
+  GPIO_InitStruct.Pin = SHORTED_TO_PB11_Pin|SHORTED_TO_PB10_Pin|BAT_12V_MEASURE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /*Configure GPIO pins : BUTTON_4_Pin BUTTON_3_Pin BUTTON_2_Pin BUTTON_1_Pin
                            HV_REQUEST_Pin DRIVE_REQUEST_Pin GASP_INTERRUPT_Pin */
   GPIO_InitStruct.Pin = BUTTON_4_Pin|BUTTON_3_Pin|BUTTON_2_Pin|BUTTON_1_Pin
@@ -1032,12 +1178,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BAT_12V_MEASURE_Pin */
-  GPIO_InitStruct.Pin = BAT_12V_MEASURE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BAT_12V_MEASURE_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

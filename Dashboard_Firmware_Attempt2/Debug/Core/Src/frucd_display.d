@@ -38,10 +38,8 @@ Core/Src/frucd_display.o: ../Core/Src/frucd_display.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h \
- ../Core/Inc/frucd_defines.h ../Core/Inc/fsm.h
+ ../Core/Inc/frucd_defines.h ../Core/Inc/fsm.h ../Core/Inc/can_manager.h \
+ ../Core/Inc/sensors.h ../Core/Inc/config.h ../Core/Inc/fsm.h
 ../Core/Inc/frucd_display.h:
 ../Core/Inc/ugui.h:
 ../Core/Inc/ugui_config.h:
@@ -84,8 +82,9 @@ Core/Src/frucd_display.o: ../Core/Src/frucd_display.c \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
-../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h:
-../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h:
-../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h:
 ../Core/Inc/frucd_defines.h:
+../Core/Inc/fsm.h:
+../Core/Inc/can_manager.h:
+../Core/Inc/sensors.h:
+../Core/Inc/config.h:
 ../Core/Inc/fsm.h:

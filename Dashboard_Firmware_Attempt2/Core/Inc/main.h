@@ -89,6 +89,10 @@ uint8_t traction_control_enable();
 #define TCAN_RX_GPIO_Port GPIOB
 #define TCAN_TX_Pin GPIO_PIN_13
 #define TCAN_TX_GPIO_Port GPIOB
+#define SHORTED_TO_PB11_Pin GPIO_PIN_14
+#define SHORTED_TO_PB11_GPIO_Port GPIOB
+#define SHORTED_TO_PB10_Pin GPIO_PIN_15
+#define SHORTED_TO_PB10_GPIO_Port GPIOB
 #define PCAN_RX_Pin GPIO_PIN_11
 #define PCAN_RX_GPIO_Port GPIOA
 #define PCAN_TX_Pin GPIO_PIN_12

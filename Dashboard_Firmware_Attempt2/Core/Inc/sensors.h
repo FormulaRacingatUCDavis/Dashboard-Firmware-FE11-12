@@ -44,14 +44,22 @@ extern CALIBRATED_SENSOR_t throttle1;
 extern CALIBRATED_SENSOR_t throttle2;
 extern CALIBRATED_SENSOR_t brake;
 
+typedef enum {
+	APPS1,
+	APPS2,
+	BSE,
+	KNOB1,
+	KNOB2
+} ADC_CHAN;
+
 
 /************ Timer ************/
 extern unsigned int discrepancy_timer_ms;
 
 //function prototypes
-uint32_t get_adc_conversion(ADC_HandleTypeDef *hadc1);
+uint32_t get_adc_conversion(ADC_HandleTypeDef *hadc, ADC_CHAN channel);
 void run_calibration();
-void update_sensor_vals();
+void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3);
 
 bool sensors_calibrated();
 bool has_discrepancy();

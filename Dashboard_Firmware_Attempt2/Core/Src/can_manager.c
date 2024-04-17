@@ -11,6 +11,8 @@ volatile uint8_t estop_flags = 0;
 volatile uint8_t switches = 0xC0;   //start with switches on to stay in startup state
 volatile uint8_t PACK_TEMP;
 volatile uint8_t mc_fault;
+volatile uint8_t soc;
+volatile uint16_t bms_status;
 
 // From TCAN
 volatile uint16_t front_right_wheel_speed = 0;
@@ -36,6 +38,9 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 	switch (RxHeader.StdId) {
 		case BMS_STATUS_MSG:
 			PACK_TEMP = RxData[0];
+			soc = RxData[1];
+			bms_status = (RxData[2] << 8);
+			bms_status += RxData[3];
 			temp_attenuate();
 			break;
 		case MC_VOLTAGE_INFO:
@@ -156,4 +161,32 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
+}
+
+void can_clear_fault(CAN_HandleTypeDef *hcan) {
+    uint8_t msg[] = {throttle1.raw << 8, 0xFF & throttle1.raw ,throttle2.raw << 8, 0xFF & throttle2.raw,brake.raw << 8, 0xFF & brake.raw,0};
+
+    TxHeader.IDE = CAN_ID_STD;
+	TxHeader.StdId = 0x111;
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.DLC = 8;
+
+	 if (HAL_CAN_AddTxMessage(hcan, &TxHeader, msg, &TxMailbox) != HAL_OK)
+	{
+	  print("CAN Tx failed\r\n");
+	}
+
+
+//	TxHeader.IDE = CAN_ID_STD;
+//	TxHeader.StdId = CLEAR_FAULT;
+//	TxHeader.RTR = CAN_RTR_DATA;
+//	TxHeader.DLC = 8;
+//
+//	const uint16_t param_addr = 0x20;
+//	uint8_t data_tx_torque[8] = {0,0,0,0,0,0,0,0};
+//
+//	if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_torque, &TxMailbox) != HAL_OK)
+//	{
+//	  print("CAN Tx failed\r\n");
+//	}
 }
