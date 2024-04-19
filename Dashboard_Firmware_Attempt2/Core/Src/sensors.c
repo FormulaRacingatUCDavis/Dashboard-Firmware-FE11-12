@@ -6,13 +6,14 @@
  */
 #include "sensors.h"
 #include "can_manager.h"
+#include "frucd_display.h"
 #include <stdlib.h>
 
 CALIBRATED_SENSOR_t throttle1;
 CALIBRATED_SENSOR_t throttle2;
 CALIBRATED_SENSOR_t brake;
 
-
+//extern void Error_Handler();
 
 /************ Timer ************/
 unsigned int discrepancy_timer_ms = 0;
@@ -46,6 +47,7 @@ void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
 
 			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
 			{
+//				Error_Handler();
 			}
 			break;
 
@@ -54,6 +56,7 @@ void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
 			sConfig.Rank = 1;
 			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
 			{
+//				Error_Handler();
 			}
 			break;
         case BSE:
@@ -61,6 +64,7 @@ void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
 			sConfig.Rank = 1;
 			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
 			{
+//				Error_Handler();
 			}
 			break;
         case KNOB1:
@@ -68,6 +72,7 @@ void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
 			sConfig.Rank = 1;
 			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
 			{
+//				Error_Handler();
 			}
 			break;
         case KNOB2:
@@ -75,6 +80,7 @@ void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
 			sConfig.Rank = 1;
 			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
 			{
+//				Error_Handler();
 			}
 			break;
         default:
@@ -116,6 +122,9 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
     brake.raw = get_adc_conversion(hadc3, BSE);
     update_percent(&brake);
 
+//    char * str;
+//    	  sprintf(str, "min1: %ld, max1: %ld, min2: %ld, max2: %ld, minb: %ld, maxb: %ld", throttle1.min, throttle1.max, throttle2.min, throttle2.max, brake.min, brake.max);
+//    	  UG_PutColorString(2, 3, str, C_GREEN, C_BLACK);
 
     /*
      * T.4.2.5 in FSAE 2022 rulebook

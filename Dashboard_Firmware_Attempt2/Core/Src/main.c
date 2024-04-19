@@ -60,7 +60,7 @@ SD_HandleTypeDef hsd1;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
-TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
@@ -71,8 +71,8 @@ SRAM_HandleTypeDef hsram1;
 /* USER CODE BEGIN PV */
 
 // Keeps track of timer waiting for pre-charging
-unsigned int precharge_timer_ms = 0;
-
+volatile unsigned int precharge_timer_ms = 0;
+volatile uint8_t init_fault_cleared = 0;
 
 /* USER CODE END PV */
 
@@ -90,8 +90,8 @@ static void MX_UART4_Init(void);
 static void MX_UART7_Init(void);
 static void MX_FMC_Init(void);
 static void MX_CAN1_Init(void);
-static void MX_TIM6_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -124,12 +124,12 @@ uint8_t traction_control_enable() {
 }
 
 uint8_t hv_switch() {
-	val2 = HAL_GPIO_ReadPin(GPIOG, HV_REQUEST_Pin);
+	val2 = !HAL_GPIO_ReadPin(GPIOG, HV_REQUEST_Pin);
 	return val2;
 }
 
 uint8_t drive_switch() {
-	val3 = HAL_GPIO_ReadPin(GPIOG, DRIVE_REQUEST_Pin);
+	val3 = !HAL_GPIO_ReadPin(GPIOG, DRIVE_REQUEST_Pin);
 	return val3;
 }
 
@@ -141,15 +141,22 @@ uint8_t shutdown_closed() {
 
 // TEST
 
-//#define ADC_BUFLEN 5
-//uint32_t ADC_buf[ADC_BUFLEN];
-//uint8_t ADC_flag = 0;
-//
-//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-//{
-//    ADC_flag = 1;
-//}
-//
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  // Check which version of the timer triggered this callback and toggle LED
+  if (htim == &htim7)
+  {
+	  if (state == PRECHARGING) {
+		  precharge_timer_ms += TMR1_PERIOD_MS;
+		  if (precharge_timer_ms > PRECHARGE_TIMEOUT_MS) {
+			  report_fault(CONSERVATIVE_TIMER_MAXED);
+		  }
+	  } else {
+		  precharge_timer_ms = 0;
+	  }
+  }
+}
+
 
 CAN_TxHeaderTypeDef   TxHeader2;
 uint32_t              TxMailbox2;
@@ -189,7 +196,7 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_CAN2_Init();
-  //MX_SDMMC1_SD_Init();
+//  MX_SDMMC1_SD_Init();
   MX_ADC1_Init();
   MX_ADC3_Init();
   MX_TIM2_Init();
@@ -198,11 +205,9 @@ int main(void)
   MX_UART7_Init();
   MX_FMC_Init();
   MX_CAN1_Init();
-  MX_TIM6_Init();
   MX_USART3_UART_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
-
-//  HAL_ADC_Start_DMA(&hadc1, ADC_buf, ADC_BUFLEN);
 
   init_sensors();
 
@@ -213,99 +218,35 @@ int main(void)
   Display_CalibrateScreen();
   Display_DriveTemplate();
 
-  HAL_TIM_Base_Start(&htim6);
+  if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK) {
+      Error_Handler();
+  }
 
-  // TEST
 
-  TxHeader2.IDE = CAN_ID_STD;
-	TxHeader2.StdId = 0x66;
-	TxHeader2.RTR = CAN_RTR_DATA;
-	TxHeader2.DLC = 8;
+//  can_clear_MC_fault(&hcan1);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
-
-//	while (1) {
-//
-//		uint32_t conversion = 0;
-//
-//		if (HAL_ADC_Start(&hadc3) != HAL_OK) {
-//			Error_Handler();
-//		}
-//
-//		// Wait for the conversion to complete
-//		if (HAL_ADC_PollForConversion(&hadc3, 20)) {
-//			Error_Handler();
-//		}
-//
-//		// Get the ADC value
-//		conversion = HAL_ADC_GetValue(&hadc3);
-//
-//		// stop adc
-//		//HAL_ADC_Stop(&hadc3);
-//
-//		TxData2[0] = conversion & 0xff;
-//		  TxData2[1] = (conversion & 0xff00) >> 8;
-//		  TxData2[2] = (conversion & 0xff0000) >> 16;
-//		  TxData2[3] = (conversion & 0xff000000) >> 24;
-//
-////		if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {
-////			int a = 0;
-////		}
-//		  //UG_PutColorString(10, 10, "st", C_BLACK, C_GREEN);
-//
-//		  char * str = "h";
-//		  sprintf(str, "adc: %lu", conversion);
-//		  UG_PutColorString(10, 10, str, C_BLACK, C_GREEN);
-//
-//	}
-
   while (1)
   {
 
-
-	  // TEST
-
-//	  char * testStr = "testt\n";
-//	  HAL_UART_Transmit(&huart3, testStr, sizeof(testStr), 30);
-
-//	  if (ADC_flag) {
-////		  ADC_flag = 0;
-
-//		  TxData2[0] = ADC_buf[0] & 0xff;
-//		  TxData2[1] = (ADC_buf[0] & 0xff00) >> 8;
-//		  TxData2[2] = (ADC_buf[0] & 0xff0000) >> 16;
-//		  TxData2[3] = (ADC_buf[0] & 0xff000000) >> 24;
-//
-//		  TxData2[4] = ADC_buf[1] & 0xff;
-//		  TxData2[5] = (ADC_buf[1] & 0xff00) >> 8;
-//		  TxData2[6] = (ADC_buf[1] & 0xff0000) >> 16;
-//		  TxData2[7] = (ADC_buf[1] & 0xff000000) >> 24;
-//
-//		  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {}
-//	  }
-
-
-
-	  //if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader2, TxData2, &TxMailbox2) != HAL_OK) {}
-
-
-	  // TEST END
-
-
-
 	  Display_Update();
+
+
+//
+	  char sstr[100];
+	  sprintf(sstr, "app1: %d, app2: %d      ", throttle1.percent, throttle2.percent);
+	  UG_PutString(5, 250, sstr);
 
 	  update_sensor_vals(&hadc1, &hadc3);
 
 	  can_tx_vcu_state(&hcan1);
 
-	  if (!mc_lockout) {
+//	  if (!mc_lockout) {
 		  can_tx_torque_request(&hcan1);
-	  }
+//	  }
 
 	  // Traction control
 	  if (traction_control_enable()) {
@@ -321,18 +262,18 @@ int main(void)
  //	  if (!HAL_GPIO_ReadPin(BSPD_LATCH){
  //		  report_fault(HARD_BSPD);
  //	  }
-
+//
 //	  if (mc_fault) {
 //		  report_fault(MC_FAULT);
 //	  }
 
-	  if (state != DRIVE) can_tx_disable_MC(&hcan1);
 
-	  can_clear_fault(&hcan1);
-
-	  char * str;
-	  sprintf(str, "min1: %ld, max1: %ld, min2: %ld, max2: %ld, minb: %ld, maxb: %ld", throttle1.min, throttle1.max, throttle2.min, throttle2.max, brake.min, brake.max);
-	  UG_PutColorString(2, 3, str, fc, bc);
+	  if (!init_fault_cleared) {
+		  can_clear_MC_fault(&hcan1);
+		  if (mc_fault_clear_success) {
+			 init_fault_cleared = 1;
+		  }
+	  }
 
 	  switch (state) {
 		  case STARTUP:
@@ -364,7 +305,10 @@ int main(void)
 
 			  break;
 		  case PRECHARGING:
-			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
+//			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
+
+			  // if main AIRs closed
+			  if (shutdown_flags & 0b110) {
 				  // Finished charging to HV on time
 				  change_state(HV_ENABLED);
 				  break;
@@ -391,21 +335,16 @@ int main(void)
 				  // Driver flipped on drive switch
 				  // Need to press on pedal at the same time to go to drive
 
-				  if (brake_mashed()) {
+//				  if (brake_mashed()) {
 					  change_state(DRIVE);
-				  } else {
-					  // Driver didn't press pedal
-					  report_fault(BRAKE_NOT_PRESSED);
-				  }
+//				  } else {
+//					  // Driver didn't press pedal
+//					  report_fault(BRAKE_NOT_PRESSED);
+//				  }
 			  }
 
 			  break;
 		  case DRIVE:
-			  // CM200 safety feature: starts in lockout mode, disable message must be sent before enable (torque requests)
-			  if (mc_lockout) {
-				  can_tx_disable_MC(&hcan1);
-			  }
-
 			  if (!drive_switch()) {
 				  // Drive switch was flipped off
 				  // Revert to HV
@@ -420,9 +359,9 @@ int main(void)
 				  break;
 			  }
 
-			  if (brake_implausible()) {
-				  report_fault(BRAKE_IMPLAUSIBLE);
-			  }
+//			  if (brake_implausible()) {
+//				  report_fault(BRAKE_IMPLAUSIBLE);
+//			  }
 
 			  break;
 		  case FAULT:
@@ -552,7 +491,7 @@ static void MX_ADC1_Init(void)
 
   /* USER CODE END ADC1_Init 0 */
 
-//  ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_ChannelConfTypeDef sConfig = {0};
 
   /* USER CODE BEGIN ADC1_Init 1 */
 
@@ -577,34 +516,34 @@ static void MX_ADC1_Init(void)
     Error_Handler();
   }
 
-//  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-//  */
-//  sConfig.Channel = ADC_CHANNEL_10;
-//  sConfig.Rank = ADC_REGULAR_RANK_1;
-//  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-//  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
 //
-//  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-//  */
-//  sConfig.Rank = ADC_REGULAR_RANK_2;
-//  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//
-//  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-//  */
-//  sConfig.Rank = ADC_REGULAR_RANK_3;
-//  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-//  {
-//    Error_Handler();
-//  }
-//  /* USER CODE BEGIN ADC1_Init 2 */
-//
-//  /* USER CODE END ADC1_Init 2 */
+  /* USER CODE END ADC1_Init 2 */
 
 }
 
@@ -880,7 +819,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 0;
+  htim4.Init.Prescaler = 8000;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -911,40 +850,41 @@ static void MX_TIM4_Init(void)
 }
 
 /**
-  * @brief TIM6 Initialization Function
+  * @brief TIM7 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM6_Init(void)
+static void MX_TIM7_Init(void)
 {
 
-  /* USER CODE BEGIN TIM6_Init 0 */
+  /* USER CODE BEGIN TIM7_Init 0 */
 
-  /* USER CODE END TIM6_Init 0 */
+  /* USER CODE END TIM7_Init 0 */
 
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-  /* USER CODE BEGIN TIM6_Init 1 */
+  /* USER CODE BEGIN TIM7_Init 1 */
 
-  /* USER CODE END TIM6_Init 1 */
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 7200;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 1000;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 8000;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 5000;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM6_Init 2 */
+  /* USER CODE BEGIN TIM7_Init 2 */
+  NVIC_EnableIRQ(TIM7_IRQn);
 
-  /* USER CODE END TIM6_Init 2 */
+  /* USER CODE END TIM7_Init 2 */
 
 }
 
@@ -1202,6 +1142,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  UG_PutString(5, 250, "HAL ERROR");
   }
   /* USER CODE END Error_Handler_Debug */
 }

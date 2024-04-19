@@ -13,12 +13,13 @@ volatile uint8_t PACK_TEMP;
 volatile uint8_t mc_fault;
 volatile uint8_t soc;
 volatile uint16_t bms_status;
+volatile uint8_t mc_fault_clear_success = 0;
 
-// From TCAN
 volatile uint16_t front_right_wheel_speed = 0;
 volatile uint16_t front_left_wheel_speed = 0;
 volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
+
 
 
 CAN_RxHeaderTypeDef RxHeader;
@@ -64,6 +65,11 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 					mc_fault = 0;
 				}
 			}
+		case MC_PARAM_RESPONSE:
+			if (RxData[0] == 0x20 && RxData[2] == 1) {
+				mc_fault_clear_success = 1;
+			}
+			break;
 		case FRONT_RIGHT_WHEEL_SPEED:
 			front_right_wheel_speed = (RxData[0] << 8) ;
 			front_right_wheel_speed += RxData[1];
@@ -129,7 +135,11 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
     }
 
     uint8_t byte5 = 0b010;   //speed mode | discharge_enable | inverter enable
-    byte5 |= (hv_requested() & 0x01);  //set inverter enable bit
+
+    if (state == DRIVE) {
+    	byte5 |= (hv_requested() & 0x01);  //set inverter enable bit
+    }
+
 
     uint8_t data_tx_torque[8] = {
         (uint8_t)(throttle_msg_byte & 0xff), // 0 - torque command lower (Nm*10)
@@ -163,31 +173,26 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan) {
 	}
 }
 
-void can_clear_fault(CAN_HandleTypeDef *hcan) {
-    //uint8_t msg[] = {throttle1.raw >> 8, 0xFF & throttle1.raw ,throttle2.raw >> 8, 0xFF & throttle2.raw, brake.raw >> 8, 0xFF & brake.raw,0};
-	uint8_t msg[] = {throttle1.min, throttle1.max ,throttle2.min, throttle2.max, brake.min, brake.max,0};
-
-    TxHeader.IDE = CAN_ID_STD;
-	TxHeader.StdId = 0x111;
+void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
+	TxHeader.IDE = CAN_ID_STD;
+	TxHeader.StdId = MC_PARAM_COMMAND;
 	TxHeader.RTR = CAN_RTR_DATA;
 	TxHeader.DLC = 8;
 
-	 if (HAL_CAN_AddTxMessage(hcan, &TxHeader, msg, &TxMailbox) != HAL_OK)
+	const uint16_t param_addr = 20;
+	uint8_t data_tx_param_command[8] = {
+			param_addr & 0xFF, // address lower (little endian)
+			param_addr << 8, // address upper
+			1, // r/w: 1 = write
+			0, // reserved
+			0, // data
+			0, // data
+			0, // reserved
+			0 // reserved
+	};
+
+	if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_param_command, &TxMailbox) != HAL_OK)
 	{
 	  print("CAN Tx failed\r\n");
 	}
-
-
-//	TxHeader.IDE = CAN_ID_STD;
-//	TxHeader.StdId = CLEAR_FAULT;
-//	TxHeader.RTR = CAN_RTR_DATA;
-//	TxHeader.DLC = 8;
-//
-//	const uint16_t param_addr = 0x20;
-//	uint8_t data_tx_torque[8] = {0,0,0,0,0,0,0,0};
-//
-//	if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_torque, &TxMailbox) != HAL_OK)
-//	{
-//	  print("CAN Tx failed\r\n");
-//	}
 }

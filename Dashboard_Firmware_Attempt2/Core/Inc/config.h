@@ -2,7 +2,7 @@
 #define	CONFIG_H
 
 // How long to wait for pre-charging to finish before timing out
-#define PRECHARGE_TIMEOUT_MS 5000
+#define PRECHARGE_TIMEOUT_MS 500
 // Delay between checking pre-charging state
 
 #define TMR1_PERIOD_MS 20
