@@ -227,6 +227,21 @@ void update_minmax(CALIBRATED_SENSOR_t* sensor){
     if(sensor->max > sensor->min) sensor->range = sensor->max - sensor->min;
 }
 
+void add_apps_deadzone(){
+	add_deadzone(&throttle1, 5);
+	add_deadzone(&throttle2, 5);
+}
+
+void add_deadzone(CALIBRATED_SENSOR_t* sensor, uint16_t deadzone_percentage){
+	uint16_t deadzone = sensor->range * deadzone_percentage / 100;
+
+	// catch funky cases that would end up with a negative or 0 range
+	if(deadzone >= sensor->range) return;
+
+	sensor->min += deadzone;
+	sensor->range -= deadzone;
+}
+
 uint16_t clamp(uint16_t in, uint16_t min, uint16_t max){
     if(in > max) return max;
     if(in < min) return min;

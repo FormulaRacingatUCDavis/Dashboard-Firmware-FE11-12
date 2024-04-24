@@ -73,6 +73,8 @@ uint16_t requested_throttle();
 uint16_t clamp(uint16_t in, uint16_t min, uint16_t max);
 void update_percent(CALIBRATED_SENSOR_t* sensor);
 void update_minmax(CALIBRATED_SENSOR_t* sensor);
+void add_apps_deadzone();
+void add_deadzone(CALIBRATED_SENSOR_t* sensor, uint16_t deadzone_percentage);
 void init_sensors();
 
 
