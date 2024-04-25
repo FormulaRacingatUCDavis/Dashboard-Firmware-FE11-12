@@ -14,13 +14,12 @@ volatile uint8_t mc_fault;
 volatile uint8_t soc;
 volatile uint16_t bms_status;
 volatile uint8_t mc_fault_clear_success = 0;
+volatile uint16_t pack_voltage;
 
 volatile uint16_t front_right_wheel_speed = 0;
 volatile uint16_t front_left_wheel_speed = 0;
 volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
-
-
 
 CAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[8];
@@ -42,6 +41,8 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			soc = RxData[1];
 			bms_status = (RxData[2] << 8);
 			bms_status += RxData[3];
+			pack_voltage = (RxData[4] << 8);
+			pack_voltage += RxData[5];
 			temp_attenuate();
 			break;
 		case MC_VOLTAGE_INFO:
@@ -131,7 +132,11 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 
     uint16_t throttle_msg_byte = 0;
     if (state == DRIVE) {
-        throttle_msg_byte = requested_throttle() - TC_torque_adjustment;
+    	uint16_t throttle_req = requested_throttle();
+    	if (throttle_req  < 50) {
+    		throttle_req = 0;
+    	}
+        throttle_msg_byte = throttle_req - TC_torque_adjustment;
     }
 
     uint8_t byte5 = 0b010;   //speed mode | discharge_enable | inverter enable

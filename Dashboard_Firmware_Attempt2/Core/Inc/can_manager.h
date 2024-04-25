@@ -46,6 +46,13 @@ extern volatile uint8_t mc_fault;
 extern volatile uint8_t soc;
 extern volatile uint16_t bms_status;
 extern volatile uint8_t mc_fault_clear_success;
+extern volatile uint16_t pack_voltage;
+
+extern CAN_RxHeaderTypeDef RxHeader;
+extern uint8_t RxData[8];
+
+extern CAN_TxHeaderTypeDef   TxHeader;
+extern uint32_t              TxMailbox;
 
 // From TCAN
 extern volatile uint16_t front_right_wheel_speed;

@@ -149,7 +149,7 @@ uint16_t requested_throttle(){
     temp_attenuate();
 
 
-    uint32_t throttle = ((uint32_t)throttle1.percent * MAX_TORQUE) / 100;  //upscale for MC code
+    uint32_t throttle = ((uint32_t)throttle2.percent * MAX_TORQUE) / 100;  //upscale for MC code
 
     throttle = (throttle * THROTTLE_MULTIPLIER) / 100;       //attenuate for temperature
 

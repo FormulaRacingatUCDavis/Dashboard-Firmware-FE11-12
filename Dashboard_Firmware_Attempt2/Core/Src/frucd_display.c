@@ -92,19 +92,6 @@ void Display_CalibrateScreen() {
     UG_FillFrame(470, 262, 480, 272, C_YELLOW);
 }
 
-// Initializes dashboard layout/label
-/*
-void initDashTemplate() {
-    UG_FillScreen(C_BLACK);
-    UG_PutString(68, 10, "PACK SOC");
-    UG_PutString(297, 10, "MAX PACK T");
-    UG_PutString(10, 195, "STATE:");
-    UG_PutString(10, 240, "GLV V:");
-    UG_PutString(339, 195, "MC T:");
-    UG_PutString(300, 240, "MOTOR T:");
-}
-*/
-
 void Display_DebugTemplate()
 {
     debug_mode = true;
@@ -123,6 +110,66 @@ void Display_DebugTemplate()
     UG_PutString(250, 205, "MC FAULT:");
 
     // setup textbox configs
+    soc_box.box_x1 = 10;
+    soc_box.box_y1 = 35;
+    soc_box.box_x2 = 240;
+    soc_box.box_y2 = 65;
+    soc_box.font = FONT_12X16;
+    soc_box.last_color = C_BLACK;  // force box redraw
+    soc_box.last_value = 255;
+
+    bms_temp_box.box_x1 = 250;
+	bms_temp_box.box_y1 = 35;
+	bms_temp_box.box_x2 = 470;
+	bms_temp_box.box_y2 = 65;
+	bms_temp_box.font = FONT_12X16;
+	bms_temp_box.last_color = C_BLACK;  // force box redraw
+	bms_temp_box.last_value = 255;
+
+	state_box.box_x1 = 10;
+	state_box.box_y1 = 100;
+	state_box.box_x2 = 240;
+	state_box.box_y2 = 130;
+	state_box.font = FONT_12X16;
+	state_box.last_color = C_BLACK;  // force box redraw
+
+	glv_v_box.box_x1 = 10;
+	glv_v_box.box_y1 = 165;
+	glv_v_box.box_x2 = 240;
+	glv_v_box.box_y2 = 195;
+	glv_v_box.font = FONT_12X16;
+	glv_v_box.last_color = C_BLACK;  // force box redraw
+
+//
+//	mc_temp_box.box_x1 = 250;
+//	mc_temp_box.box_y1 = 100;
+//	mc_temp_box.box_x2 = 470;
+//	mc_temp_box.box_y2 = 130;
+//	mc_temp_box.font = FONT_12X16;
+//	mc_temp_box.last_color = C_BLACK;  // force box redraw
+//	mc_temp_box.last_value = 255;
+//
+//	motor_temp_box.box_x1 = 250;
+//	motor_temp_box.box_y1 = 165;
+//	motor_temp_box.box_x2 = 470;
+//	motor_temp_box.box_y2 = 195;
+//	motor_temp_box.font = FONT_12X16;
+//	motor_temp_box.last_color = C_BLACK;  // force box redraw
+//	motor_temp_box.last_value = 255;
+
+	state_box.box_x1 = 10;
+	state_box.box_y1 = 230;
+	state_box.box_x2 = 470;
+	state_box.box_y2 = 160;
+	state_box.font = FONT_12X16;
+	state_box.last_color = C_BLACK;  // force box redraw
+
+//	glv_v_box.box_x1 = 10;
+//	glv_v_box.box_y1 = 165;
+//	glv_v_box.box_x2 = 240;
+//	glv_v_box.box_y2 = 195;
+//	glv_v_box.font = FONT_12X16;
+//	glv_v_box.last_color = C_BLACK;  // force box redraw
 
 }
 

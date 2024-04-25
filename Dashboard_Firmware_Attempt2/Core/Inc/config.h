@@ -16,9 +16,9 @@
 #define PEDAL_MAX 4095
 
 //minimum calibration ranges
-#define APPS1_MIN_RANGE 3200   //will not enter HV until pedal is calibrated
-#define APPS2_MIN_RNAGE 800
-#define BRAKE_MIN_RANGE 800
+#define APPS1_MIN_RANGE 500   //will not enter HV until pedal is calibrated
+#define APPS2_MIN_RNAGE 500
+#define BRAKE_MIN_RANGE 0
 
 //in percent:
 #define APPS1_BSPD_THRESHOLD 25
