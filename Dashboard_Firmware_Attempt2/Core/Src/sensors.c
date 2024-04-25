@@ -12,6 +12,7 @@
 CALIBRATED_SENSOR_t throttle1;
 CALIBRATED_SENSOR_t throttle2;
 CALIBRATED_SENSOR_t brake;
+uint32_t torque_percentage = 100;
 
 //extern void Error_Handler();
 
@@ -121,6 +122,7 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
     update_percent(&throttle2);
     brake.raw = get_adc_conversion(hadc3, BSE);
     update_percent(&brake);
+    torque_percentage = get_adc_conversion(hadc1, KNOB2) * 100 / 4095;
 
 //    char * str;
 //    	  sprintf(str, "min1: %ld, max1: %ld, min2: %ld, max2: %ld, minb: %ld, maxb: %ld", throttle1.min, throttle1.max, throttle2.min, throttle2.max, brake.min, brake.max);
@@ -150,8 +152,8 @@ uint16_t requested_throttle(){
 
 
     uint32_t throttle = ((uint32_t)throttle1.percent * MAX_TORQUE) / 100;  //upscale for MC code
-
     throttle = (throttle * THROTTLE_MULTIPLIER) / 100;       //attenuate for temperature
+    throttle = throttle * torque_percentage / 100;
 
     if (throttle >= 5.0) {			//case 1: if the pedal is actually being pressed return on a 1:1 scale
     	return (uint16_t)throttle;
@@ -230,6 +232,7 @@ void update_minmax(CALIBRATED_SENSOR_t* sensor){
 void add_apps_deadzone(){
 	add_deadzone(&throttle1, 5);
 	add_deadzone(&throttle2, 5);
+	add_deadzone(&brake, 10);
 }
 
 void add_deadzone(CALIBRATED_SENSOR_t* sensor, uint16_t deadzone_percentage){
