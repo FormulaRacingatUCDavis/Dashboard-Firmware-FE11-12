@@ -23,6 +23,7 @@
 //in percent:
 #define APPS1_BSPD_THRESHOLD 25
 #define APPS1_BSPD_RESET 5
+#define DEADZONE_PERCENTAGE 5
 
 //in raw ADC:
 #define APPS_SHORT_THRESH 3900   //~4.75V

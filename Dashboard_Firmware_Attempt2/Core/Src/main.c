@@ -305,6 +305,7 @@ int main(void)
 				  // check if APPS pedal was calibrated
 				  if (sensors_calibrated()) {
 					  // Start charging the car to high voltage state
+					  add_apps_deadzone();
 					  change_state(PRECHARGING);
 				  } else {
 					  report_fault(UNCALIBRATED);
@@ -316,7 +317,7 @@ int main(void)
 //			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
 
 			  // if main AIRs closed
-			  if (shutdown_flags & 0b110) {
+			  if ((shutdown_flags & 0b110) == 0b110) {
 				  // Finished charging to HV on time
 				  change_state(HV_ENABLED);
 				  break;
