@@ -105,21 +105,23 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	TxHeader.IDE = CAN_ID_STD;
 	TxHeader.StdId = VEHICLE_STATE;
 	TxHeader.RTR = CAN_RTR_DATA;
-	TxHeader.DLC = 6;
-	uint8_t data_tx_state[6] = {
+	TxHeader.DLC = 8;
+	uint8_t data_tx_state[8] = {
         0,
         hv_requested(),
         throttle1.percent,
         throttle2.percent,
 		brake.percent,
         one_byte_state(),
-
+		0,
+		0
     };
 
     if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_state, &TxMailbox) != HAL_OK)
 	{
 	  print("CAN Tx failed\r\n");
 	}
+    write_tx_to_sd(TxHeader, data_tx_state);
 }
 
 
@@ -161,6 +163,7 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 	{
 	  print("CAN Tx failed\r\n");
 	}
+    write_tx_to_sd(TxHeader, data_tx_torque);
 }
 
 
@@ -176,6 +179,7 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
+	write_tx_to_sd(TxHeader, data_tx_torque);
 }
 
 void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
@@ -200,4 +204,5 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
+	write_tx_to_sd(TxHeader, data_tx_param_command);
 }

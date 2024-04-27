@@ -111,6 +111,7 @@ uint8_t traction_control_enable();
 #define DRIVE_REQUEST_GPIO_Port GPIOG
 #define GASP_INTERRUPT_Pin GPIO_PIN_15
 #define GASP_INTERRUPT_GPIO_Port GPIOG
+#define GASP_INTERRUPT_EXTI_IRQn EXTI15_10_IRQn
 #define BAT_12V_MEASURE_Pin GPIO_PIN_3
 #define BAT_12V_MEASURE_GPIO_Port GPIOB
 
