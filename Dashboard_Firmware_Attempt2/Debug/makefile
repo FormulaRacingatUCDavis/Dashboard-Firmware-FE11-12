@@ -64,8 +64,8 @@ all: main-build
 main-build: Dashboard_Firmware_Attempt2.elf secondary-outputs
 
 # Tool invocations
-Dashboard_Firmware_Attempt2.elf Dashboard_Firmware_Attempt2.map: $(OBJS) $(USER_OBJS) C:\Users\Melody\Desktop\Programming_Stuff\FRUCD\Dashboard-Firmware-FE11\Dashboard_Firmware_Attempt2\STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Dashboard_Firmware_Attempt2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\Melody\Desktop\Programming_Stuff\FRUCD\Dashboard-Firmware-FE11\Dashboard_Firmware_Attempt2\STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashboard_Firmware_Attempt2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Dashboard_Firmware_Attempt2.elf Dashboard_Firmware_Attempt2.map: $(OBJS) $(USER_OBJS) /Users/cogus/Documents/GitHub/Dashboard-Firmware-FE11/Dashboard_Firmware_Attempt2/STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Dashboard_Firmware_Attempt2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/Users/cogus/Documents/GitHub/Dashboard-Firmware-FE11/Dashboard_Firmware_Attempt2/STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashboard_Firmware_Attempt2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
