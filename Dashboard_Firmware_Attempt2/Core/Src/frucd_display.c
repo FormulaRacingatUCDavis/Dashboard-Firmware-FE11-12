@@ -46,6 +46,14 @@ TEXTBOX_CONFIG bms_temp_box = {
 
 TEXTBOX_CONFIG state_box;
 
+TEXTBOX_CONFIG shutdown_box;
+
+TEXTBOX_CONFIG mc_temp_box;
+
+TEXTBOX_CONFIG motor_temp_box;
+
+TEXTBOX_CONFIG mc_fault_state_box;
+
 TEXTBOX_CONFIG glv_v_box = {
 		.grn_ylw_cutoff = 1150,
 		.ylw_org_cutoff = 1100,
@@ -100,69 +108,87 @@ void Display_DebugTemplate()
     UG_FillScreen(C_BLACK);
 
     // draw labels
-    UG_PutString(10, 10, "PACK SOC:");
-    UG_PutString(250, 10, "MAX PACK T:");
-    UG_PutString(10, 75, "STATE:");
-    UG_PutString(250, 75, "MC T:");
-    UG_PutString(10, 140, "GLV V:");
-    UG_PutString(250, 140, "MOTOR T:");
-    UG_PutString(10, 205, "SHUTDOWN:");
-    UG_PutString(250, 205, "MC FAULT:");
+    UG_PutString(270, 0, "PACK SOC:");
+    UG_PutString(30, 120, "MAX PACK T:");
+//    UG_PutString(10, 75, "STATE:");
+    UG_PutString(30, 180, "STATE:");
+    UG_PutString(30, 0, "MC T:");
+//    UG_PutString(10, 140, "GLV V:");
+    UG_PutString(270, 180, "GLV V:");
+    UG_PutString(30, 60, "MOTOR T:");
+    UG_PutString(270, 60, "SHUTDOWN:");
+    UG_PutString(270, 120, "MC FAULT:");
 
     // setup textbox configs
-    soc_box.box_x1 = 10;
-    soc_box.box_y1 = 35;
-    soc_box.box_x2 = 240;
-    soc_box.box_y2 = 65;
+    soc_box.box_x1 = 270;
+    soc_box.box_y1 = 20;
+    soc_box.box_x2 = 450;
+    soc_box.box_y2 = 50;
     soc_box.font = FONT_12X16;
     soc_box.last_color = C_BLACK;  // force box redraw
     soc_box.last_value = 255;
 
-    bms_temp_box.box_x1 = 250;
-	bms_temp_box.box_y1 = 35;
-	bms_temp_box.box_x2 = 470;
-	bms_temp_box.box_y2 = 65;
+    shutdown_box.box_x1 = 270;
+    shutdown_box.box_y1 = 80;
+    shutdown_box.box_x2 = 450;
+    shutdown_box.box_y2 = 110;
+
+    //updated
+    bms_temp_box.box_x1 = 30;
+	bms_temp_box.box_y1 = 140;
+	bms_temp_box.box_x2 = 210;
+	bms_temp_box.box_y2 = 170;
 	bms_temp_box.font = FONT_12X16;
 	bms_temp_box.last_color = C_BLACK;  // force box redraw
 	bms_temp_box.last_value = 255;
 
-	state_box.box_x1 = 10;
-	state_box.box_y1 = 100;
-	state_box.box_x2 = 240;
-	state_box.box_y2 = 130;
+//	state_box.box_x1 = 10;
+//	state_box.box_y1 = 100;
+//	state_box.box_x2 = 240;
+//	state_box.box_y2 = 130;
+//	state_box.font = FONT_12X16;
+//	state_box.last_color = C_BLACK;  // force box redraw
+
+	//updated
+	state_box.box_x1 = 30;
+	state_box.box_y1 = 200;
+	state_box.box_x2 = 210;
+	state_box.box_y2 = 230;
 	state_box.font = FONT_12X16;
 	state_box.last_color = C_BLACK;  // force box redraw
+	state_box.last_value = 255;
 
-	glv_v_box.box_x1 = 10;
-	glv_v_box.box_y1 = 165;
-	glv_v_box.box_x2 = 240;
-	glv_v_box.box_y2 = 195;
-	glv_v_box.font = FONT_12X16;
-	glv_v_box.last_color = C_BLACK;  // force box redraw
 
-//
-//	mc_temp_box.box_x1 = 250;
-//	mc_temp_box.box_y1 = 100;
-//	mc_temp_box.box_x2 = 470;
-//	mc_temp_box.box_y2 = 130;
-//	mc_temp_box.font = FONT_12X16;
-//	mc_temp_box.last_color = C_BLACK;  // force box redraw
-//	mc_temp_box.last_value = 255;
-//
-//	motor_temp_box.box_x1 = 250;
-//	motor_temp_box.box_y1 = 165;
-//	motor_temp_box.box_x2 = 470;
-//	motor_temp_box.box_y2 = 195;
-//	motor_temp_box.font = FONT_12X16;
-//	motor_temp_box.last_color = C_BLACK;  // force box redraw
-//	motor_temp_box.last_value = 255;
 
-	state_box.box_x1 = 10;
-	state_box.box_y1 = 230;
-	state_box.box_x2 = 470;
-	state_box.box_y2 = 160;
-	state_box.font = FONT_12X16;
-	state_box.last_color = C_BLACK;  // force box redraw
+	//motor control temp updated
+	mc_temp_box.box_x1 = 30;
+	mc_temp_box.box_y1 = 20;
+	mc_temp_box.box_x2 = 210;
+	mc_temp_box.box_y2 = 50;
+	mc_temp_box.font = FONT_12X16;
+	mc_temp_box.last_color = C_BLACK;  // force box redraw
+	mc_temp_box.last_value = 255;
+
+	//updated
+	motor_temp_box.box_x1 = 30;
+	motor_temp_box.box_y1 = 80;
+	motor_temp_box.box_x2 = 210;
+	motor_temp_box.box_y2 = 110;
+	motor_temp_box.font = FONT_12X16;
+	motor_temp_box.last_color = C_BLACK;  // force box redraw
+	motor_temp_box.last_value = 255;
+
+	mc_fault_state_box.box_x1 = 270;
+	mc_fault_state_box.box_y1 = 140;
+	mc_fault_state_box.box_x2 = 450;
+	mc_fault_state_box.box_y2 = 170;
+	mc_fault_state_box.font = FONT_12X16;
+	mc_fault_state_box.last_color = C_BLACK;  // force box redraw
+	mc_fault_state_box.last_value = 255;
+
+
+
+
 
 //	glv_v_box.box_x1 = 10;
 //	glv_v_box.box_y1 = 165;
@@ -170,6 +196,14 @@ void Display_DebugTemplate()
 //	glv_v_box.box_y2 = 195;
 //	glv_v_box.font = FONT_12X16;
 //	glv_v_box.last_color = C_BLACK;  // force box redraw
+
+	//updated
+	glv_v_box.box_x1 = 270;
+	glv_v_box.box_y1 = 200;
+	glv_v_box.box_x2 = 450;
+	glv_v_box.box_y2 = 230;
+	glv_v_box.font = FONT_12X16;
+	glv_v_box.last_color = C_BLACK;  // force box redraw
 
 }
 
