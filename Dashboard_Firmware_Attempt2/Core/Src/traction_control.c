@@ -1,5 +1,7 @@
 #include "traction_control.h"
+#include "frucd_display.h"
 #include "can_manager.h"
+#include "stdio.h"
 
 volatile uint16_t TC_control_var = 0;
 volatile uint16_t TC_torque_adjustment = 0;
@@ -22,14 +24,13 @@ const uint8_t kD = 0;
 
 const uint16_t TC_torque_limit = 100;
 
-void traction_control_PID(){
+void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
     if (state != DRIVE) return;
 
-    // note: wheel speeds are in units of pulses/20ms
-    const float avg_front_wheel_speed = (front_right_wheel_speed + front_left_wheel_speed)/2.0;
-    const float avg_back_wheel_speed = (back_right_wheel_speed + back_left_wheel_speed)/2.0;
-    const float conversion_factor = (2*pi*wheel_radius)/pulses_per_rev;
-    const float current_slip_ratio = (avg_back_wheel_speed*conversion_factor) / (avg_front_wheel_speed*conversion_factor);
+    const float avg_front_wheel_speed = (fr_wheel_speed + fl_wheel_speed)/2.0;
+    const float avg_back_wheel_speed = back_right_wheel_speed; // (back_right_wheel_speed + back_left_wheel_speed)/2.0;
+//    const float conversion_factor = (2*pi*wheel_radius)/pulses_per_rev;
+    const float current_slip_ratio = avg_back_wheel_speed/avg_front_wheel_speed*((2*pi)/60.0); // (avg_back_wheel_speed*conversion_factor) / (avg_front_wheel_speed*conversion_factor);
 
     // if target slip ratio has been achieved
 //    if (current_slip_ratio < target_slip_ratio + 0.001 || current_slip_ratio > target_slip_ratio - 0.001) return;

@@ -1,5 +1,5 @@
-Core/Src/can_manager.o: ../Core/Src/can_manager.c \
- ../Core/Inc/can_manager.h \
+Core/Src/wheel_speed.o: ../Core/Src/wheel_speed.c \
+ ../Core/Inc/wheel_speed.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
@@ -36,11 +36,8 @@ Core/Src/can_manager.o: ../Core/Src/can_manager.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Core/Inc/fsm.h ../Core/Inc/sensors.h ../Core/Inc/config.h \
- ../Core/Inc/serial_print.h ../Core/Inc/traction_control.h \
- ../Core/Inc/wheel_speed.h
-../Core/Inc/can_manager.h:
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
+../Core/Inc/wheel_speed.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h:
@@ -78,9 +75,3 @@ Core/Src/can_manager.o: ../Core/Src/can_manager.c \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
-../Core/Inc/fsm.h:
-../Core/Inc/sensors.h:
-../Core/Inc/config.h:
-../Core/Inc/serial_print.h:
-../Core/Inc/traction_control.h:
-../Core/Inc/wheel_speed.h:

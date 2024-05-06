@@ -1,6 +1,6 @@
-../Core/Src/can_manager.c:27:6:HAL_CAN_RxFifo0MsgPendingCallback	1
-../Core/Src/can_manager.c:36:6:save_can_rx_data	20
-../Core/Src/can_manager.c:104:6:can_tx_vcu_state	2
-../Core/Src/can_manager.c:129:6:can_tx_torque_request	5
-../Core/Src/can_manager.c:170:6:can_tx_disable_MC	2
-../Core/Src/can_manager.c:185:6:can_clear_MC_fault	2
+../Core/Src/can_manager.c:25:6:HAL_CAN_RxFifo0MsgPendingCallback	1
+../Core/Src/can_manager.c:34:6:save_can_rx_data	15
+../Core/Src/can_manager.c:97:6:can_tx_vcu_state	2
+../Core/Src/can_manager.c:122:6:can_tx_torque_request	5
+../Core/Src/can_manager.c:163:6:can_tx_disable_MC	2
+../Core/Src/can_manager.c:178:6:can_clear_MC_fault	2

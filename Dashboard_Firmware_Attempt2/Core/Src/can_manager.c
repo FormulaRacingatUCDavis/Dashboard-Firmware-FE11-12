@@ -16,8 +16,6 @@ volatile uint16_t bms_status;
 volatile uint8_t mc_fault_clear_success = 0;
 volatile uint16_t pack_voltage;
 
-volatile uint16_t front_right_wheel_speed = 0;
-volatile uint16_t front_left_wheel_speed = 0;
 volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
 
@@ -71,21 +69,16 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 				mc_fault_clear_success = 1;
 			}
 			break;
-		case FRONT_RIGHT_WHEEL_SPEED:
-			front_right_wheel_speed = (RxData[0] << 8) ;
-			front_right_wheel_speed += RxData[1];
-			break;
-		case FRONT_LEFT_WHEEL_SPEED:
-			front_left_wheel_speed = (RxData[0] << 8) ;
-			front_left_wheel_speed += RxData[1];
-			break;
-		case BACK_RIGHT_WHEEL_SPEED:
-			back_right_wheel_speed = (RxData[0] << 8) ;
-			back_right_wheel_speed += RxData[1];
-			break;
-		case BACK_LEFT_WHEEL_SPEED:
-			back_left_wheel_speed = (RxData[0] << 8) ;
-			back_left_wheel_speed += RxData[1];
+//		case WHEEL_SPEED_REAR:
+//			back_right_wheel_speed = (RxData[0] << 8) ;
+//			back_right_wheel_speed += RxData[1];
+//			back_left_wheel_speed = (RxData[2] << 8) ;
+//			back_left_wheel_speed += RxData[3];
+//			break;
+		case MC_MOTOR_POSITION:
+			back_right_wheel_speed = (RxData[3] << 8) ;
+			back_right_wheel_speed += RxData[2];
+			back_right_wheel_speed *= -1;
 			break;
 		default:
 			// no valid input received
@@ -121,7 +114,7 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	{
 	  print("CAN Tx failed\r\n");
 	}
-    write_tx_to_sd(TxHeader, data_tx_state);
+//    write_tx_to_sd(TxHeader, data_tx_state);
 }
 
 
@@ -163,7 +156,7 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 	{
 	  print("CAN Tx failed\r\n");
 	}
-    write_tx_to_sd(TxHeader, data_tx_torque);
+//    write_tx_to_sd(TxHeader, data_tx_torque);
 }
 
 
@@ -179,7 +172,7 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
-	write_tx_to_sd(TxHeader, data_tx_torque);
+//	write_tx_to_sd(TxHeader, data_tx_torque);
 }
 
 void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
@@ -204,5 +197,7 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
-	write_tx_to_sd(TxHeader, data_tx_param_command);
+//	write_tx_to_sd(TxHeader, data_tx_param_command);
 }
+
+
