@@ -34,8 +34,9 @@ void mount_sd_card(void) {
   		  FIL F1;
   		  sprintf(filename, "run_%c.txt", (char)num);
 
- 		  // if found filename thats not taken
   		  FRESULT f_open_status = f_open(&F1, filename, FA_READ);
+
+  		  // if found filename thats not taken, use it
   		  if (f_open_status != FR_OK) {
   			  f_close(&F1);
   			  break;

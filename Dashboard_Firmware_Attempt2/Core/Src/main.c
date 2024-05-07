@@ -30,6 +30,7 @@
 #include "traction_control.h"
 #include "frucd_display.h"
 #include "sd_card.h"
+#include "wheel_speed.h"
 
 
 /* USER CODE END Includes */
@@ -106,18 +107,6 @@ static void MX_TIM7_Init(void);
 
 /************ Switches ************/
 
-/*
- * global variable for driver switch and button status
- *
- * format: 0000 0[TC][Hv][Dr]
- * bit is high if corresponding switch is on, low otherwise
- *
- * use in conditions:
- *  - TC = switches & 0b100
- *  - Hv = switches & 0b10
- *  - Dr = switches & 0b1
- */
-
 uint8_t traction_control_enable() {
 	return HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
 }
@@ -144,7 +133,6 @@ uint8_t shutdown_closed() {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  // Check which version of the timer triggered this callback and toggle LED
   if (htim == &htim7)
   {
 	  if (state == PRECHARGING) {
@@ -156,23 +144,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		  precharge_timer_ms = 0;
 	  }
   }
-
-  // front wheel speeds
-  if (htim == &htim2)
-  {
-
-  }
-  if (htim == &htim4)
-  {
-
-  }
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GASP_INTERRUPT_Pin) {
-		sd_card_close_file();
+//		sd_card_close_file();
 	}
 }
+
+volatile uint32_t front_right_wheel_speed;
+volatile uint32_t front_left_wheel_speed;
+
+WheelSpeed_t front_right_wheel_speed_t;
+WheelSpeed_t front_left_wheel_speed_t;
 
 // TEST END
 
@@ -236,6 +220,15 @@ int main(void)
   if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK) {
       Error_Handler();
   }
+  if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK) {
+      Error_Handler();
+  }
+  if (HAL_TIM_Base_Start_IT(&htim4) != HAL_OK) {
+	  Error_Handler();
+  }
+
+  WheelSpeed_Init(&front_right_wheel_speed_t, &htim2);
+  WheelSpeed_Init(&front_left_wheel_speed_t, &htim4);
 
   if(display_debug_enabled()) {
 	  Display_DebugTemplate();
@@ -243,7 +236,7 @@ int main(void)
   }
 
 
-  mount_sd_card();
+//  mount_sd_card();
 
   /* USER CODE END 2 */
 
@@ -254,11 +247,11 @@ int main(void)
 
 	  Display_Update();
 
-	  write_rx_to_sd();
+	  //write_rx_to_sd();
 
 	  char sstr[100];
-	  sprintf(sstr, "apps1: %d, apps2: %d, bse: %d      ", throttle1.percent, throttle2.percent, brake.percent);
-	  UG_PutString(5, 250, sstr);
+//	  sprintf(sstr, "apps1: %d, apps2: %d, bse: %d      ", throttle1.percent, throttle2.percent, brake.percent);
+//	  UG_PutString(5, 250, sstr);
 
 	  update_sensor_vals(&hadc1, &hadc3);
 
@@ -266,9 +259,16 @@ int main(void)
 
 	  can_tx_torque_request(&hcan1);
 
+	  // update front wheel speeds
+	  front_right_wheel_speed = WheelSpeed_GetCPS(&front_right_wheel_speed_t);
+	  front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
+
+	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d      ", front_right_wheel_speed, front_left_wheel_speed, back_right_wheel_speed);
+	  UG_PutString(5, 250, sstr);
+
 	  // Traction control
 	  if (traction_control_enable()) {
-		  traction_control_PID();
+		  traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	  }
 
 	  // If shutdown circuit opens in any state
@@ -300,6 +300,7 @@ int main(void)
 //	  else {
 //		  Display_DriveTemplate();
 //	  }
+
 
 	  switch (state) {
 		  case STARTUP:

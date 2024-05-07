@@ -16,8 +16,6 @@
 
 /********** ENUM OF CAN IDS **********/
 typedef enum {
-    // PCAN
-    //BSPD_FLAGS = 0x0c1,
     VEHICLE_STATE = 0x766,
     TORQUE_REQUEST = 0x0C0,
     BMS_STATUS_MSG = 0x380,
@@ -27,12 +25,8 @@ typedef enum {
     MC_FAULT_CODES = 0xAB,
 	MC_PARAM_COMMAND = 0x0C1,
 	MC_PARAM_RESPONSE = 0x0C2,
-
-    // TCAN
-    FRONT_LEFT_WHEEL_SPEED = 0x470,
-    FRONT_RIGHT_WHEEL_SPEED = 0x471,
-    BACK_LEFT_WHEEL_SPEED = 0x472,
-    BACK_RIGHT_WHEEL_SPEED = 0x473
+	MC_MOTOR_POSITION = 0x0A5,
+    WHEEL_SPEED_REAR = 0x401
 } CAN_ID;
 
 extern volatile uint8_t mc_lockout;
@@ -55,8 +49,6 @@ extern CAN_TxHeaderTypeDef   TxHeader;
 extern uint32_t              TxMailbox;
 
 // From TCAN
-extern volatile uint16_t front_right_wheel_speed;
-extern volatile uint16_t front_left_wheel_speed;
 extern volatile uint16_t back_right_wheel_speed;
 extern volatile uint16_t back_left_wheel_speed;
 
