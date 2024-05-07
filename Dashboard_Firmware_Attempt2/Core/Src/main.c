@@ -237,6 +237,11 @@ int main(void)
       Error_Handler();
   }
 
+  if(display_debug_enabled()) {
+	  Display_DebugTemplate();
+
+  }
+
 
   mount_sd_card();
 
