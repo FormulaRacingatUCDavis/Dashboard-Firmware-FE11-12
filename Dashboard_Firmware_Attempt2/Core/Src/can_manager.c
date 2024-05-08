@@ -42,6 +42,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			bms_status += RxData[3];
 			pack_voltage = (RxData[4] << 8);
 			pack_voltage += RxData[5];
+			write_rx_to_sd();
 			temp_attenuate();
 			break;
 		case MC_VOLTAGE_INFO:
@@ -118,7 +119,7 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	{
 	  print("CAN Tx failed\r\n");
 	}
-//    write_tx_to_sd(TxHeader, data_tx_state);
+    write_tx_to_sd(TxHeader, data_tx_state);
 }
 
 
@@ -169,7 +170,7 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 	{
 	  print("CAN Tx failed\r\n");
 	}
-//    write_tx_to_sd(TxHeader, data_tx_torque);
+    write_tx_to_sd(TxHeader, data_tx_torque);
 }
 
 
@@ -185,7 +186,7 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
-//	write_tx_to_sd(TxHeader, data_tx_torque);
+	write_tx_to_sd(TxHeader, data_tx_torque);
 }
 
 void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
@@ -210,7 +211,7 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
-//	write_tx_to_sd(TxHeader, data_tx_param_command);
+	write_tx_to_sd(TxHeader, data_tx_param_command);
 }
 
 

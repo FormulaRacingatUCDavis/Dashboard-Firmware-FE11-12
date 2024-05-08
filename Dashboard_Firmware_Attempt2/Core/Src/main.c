@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -73,6 +74,20 @@ UART_HandleTypeDef huart3;
 
 SRAM_HandleTypeDef hsram1;
 
+/* Definitions for DashboardMain */
+osThreadId_t DashboardMainHandle;
+const osThreadAttr_t DashboardMain_attributes = {
+  .name = "DashboardMain",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for SDCard */
+osThreadId_t SDCardHandle;
+const osThreadAttr_t SDCard_attributes = {
+  .name = "SDCard",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* USER CODE BEGIN PV */
 
 // Keeps track of timer waiting for pre-charging
@@ -97,6 +112,9 @@ static void MX_FMC_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM7_Init(void);
+void DashboardEntry(void *argument);
+void SDCardEntry(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -131,21 +149,6 @@ uint8_t shutdown_closed() {
 }
 
 // TEST
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  if (htim == &htim7)
-  {
-	  if (state == PRECHARGING) {
-		  precharge_timer_ms += TMR1_PERIOD_MS;
-		  if (precharge_timer_ms > PRECHARGE_TIMEOUT_MS) {
-			  report_fault(CONSERVATIVE_TIMER_MAXED);
-		  }
-	  } else {
-		  precharge_timer_ms = 0;
-	  }
-  }
-}
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GASP_INTERRUPT_Pin) {
@@ -207,249 +210,58 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
-  init_sensors();
 
-  Display_Init();
-  UG_FontSelect(&FONT_12X16);
-  UG_SetBackcolor(C_BLACK);
-  UG_SetForecolor(C_YELLOW);
-
-  Display_CalibrateScreen();
-
-  Display_DriveTemplate();
-
-  if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK) {
-      Error_Handler();
-  }
-  if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK) {
-      Error_Handler();
-  }
-  if (HAL_TIM_Base_Start_IT(&htim4) != HAL_OK) {
-	  Error_Handler();
-  }
-
-  WheelSpeed_Init(&front_right_wheel_speed_t, &htim2);
-  WheelSpeed_Init(&front_left_wheel_speed_t, &htim4);
 
 
 //  mount_sd_card();
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of DashboardMain */
+  DashboardMainHandle = osThreadNew(DashboardEntry, NULL, &DashboardMain_attributes);
+
+  /* creation of SDCard */
+  SDCardHandle = osThreadNew(SDCardEntry, NULL, &SDCard_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	  Display_Update();
-
-	  if (display_debug_enabled && debug_btn_pressed()) {
-		 Display_DriveTemplate();
-		 display_debug_enabled = 0;
-	  }
-	  else if (debug_btn_pressed()) {
-		  Display_DebugTemplate();
-		  display_debug_enabled = 1;
-	  }
-
-	  //write_rx_to_sd();
-
-	  char sstr[100];
-//	  sprintf(sstr, "apps1: %d, apps2: %d, bse: %d      ", throttle1.percent, throttle2.percent, brake.percent);
-//	  UG_PutString(5, 250, sstr);
-
-	  update_sensor_vals(&hadc1, &hadc3);
-
-	  can_tx_vcu_state(&hcan1);
-
-	  can_tx_torque_request(&hcan1);
-
-	  // update front wheel speeds
-	  front_right_wheel_speed = WheelSpeed_GetCPS(&front_right_wheel_speed_t);
-	  front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
-
-	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d      ", front_right_wheel_speed, front_left_wheel_speed, back_right_wheel_speed);
-	  UG_PutString(5, 250, sstr);
-
-	  // Traction control
-	  if (traction_control_enable()) {
-		  traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
-	  }
-
-	  // If shutdown circuit opens in any state
-	  if (!shutdown_closed()) {
-		  report_fault(SHUTDOWN_CIRCUIT_OPEN);
-	  }
-
-	  //if hard BSPD trips in any state
- //	  if (!HAL_GPIO_ReadPin(BSPD_LATCH){
- //		  report_fault(HARD_BSPD);
- //	  }
-//
-//	  if (mc_fault) {
-//		  report_fault(MC_FAULT);
-//	  }
-
-
-	  if (!init_fault_cleared) {
-		  can_clear_MC_fault(&hcan1);
-		  if (mc_fault_clear_success) {
-			 init_fault_cleared = 1;
-		  }
-	  }
-
-
-
-	  switch (state) {
-		  case STARTUP:
-			  run_calibration();
-
-			  if (!hv_switch() && !drive_switch()) {
-				  change_state(LV);
-			  }
-			  break;
-		  case LV:
-			  run_calibration();
-
-			  if (drive_switch()) {
-				  // Drive switch should not be enabled during LV
-				  report_fault(DRIVE_REQUEST_FROM_LV);
-				  break;
-			  }
-
-			  if (hv_switch()) {
-				  // HV switch was flipped
-				  // check if APPS pedal was calibrated
-				  if (sensors_calibrated()) {
-					  // Start charging the car to high voltage state
-					  add_apps_deadzone();
-					  change_state(PRECHARGING);
-				  } else {
-					  report_fault(UNCALIBRATED);
-				  }
-			  }
-
-			  break;
-		  case PRECHARGING:
-//			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
-
-			  // if main AIRs closed
-			  if ((shutdown_flags & 0b110) == 0b110) {
-				  // Finished charging to HV on time
-				  change_state(HV_ENABLED);
-				  break;
-			  }
-			  if (!hv_switch()) {
-				  // Driver flipped off HV switch
-				  change_state(LV);
-				  break;
-			  }
-			  if (drive_switch()) {
-				  // Drive switch should not be enabled during PRECHARGING
-				  report_fault(DRIVE_REQUEST_FROM_LV);
-				  break;
-			  }
-			  break;
-		  case HV_ENABLED:
-			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
-				  // Driver flipped off HV switch
-				  change_state(LV);
-				  break;
-			  }
-
-			  if (drive_switch()) {
-				  // Driver flipped on drive switch
-				  // Need to press on pedal at the same time to go to drive
-
-//				  if (brake_mashed()) {
-					  change_state(DRIVE);
-//				  } else {
-//					  // Driver didn't press pedal
-//					  report_fault(BRAKE_NOT_PRESSED);
-//				  }
-			  }
-
-			  break;
-		  case DRIVE:
-			  if (!drive_switch()) {
-				  // Drive switch was flipped off
-				  // Revert to HV
-				  change_state(HV_ENABLED);
-				 break;
-			  }
-
-			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules || capacitor_volt < PRECHARGE_THRESHOLD) {
-				  // HV switched flipped off, so can't drive
-				  // or capacitor dropped below threshold
-				  report_fault(HV_DISABLED_WHILE_DRIVING);
-				  break;
-			  }
-
-//			  if (brake_implausible()) {
-//				  report_fault(BRAKE_IMPLAUSIBLE);
-//			  }
-
-			  break;
-		  case FAULT:
-			  switch (error) {
-				  case BRAKE_NOT_PRESSED:
-					  if (!hv_switch())
-						  change_state(LV);
-
-					  if (!drive_switch()) {
-						  // reset drive switch and try again
-						  change_state(HV_ENABLED);
-					  }
-					  break;
-				  case SENSOR_DISCREPANCY:
-					  // stop power to motors if discrepancy persists for >100ms
-					  // see rule T.4.2.5 in FSAE 2022 rulebook
-					  if (!drive_switch()) {
-						  discrepancy_timer_ms = 0;
-						  change_state(HV_ENABLED);
-					  }
-
-					  if (!hv_switch())
-						  report_fault(HV_DISABLED_WHILE_DRIVING);
-
-					  break;
-				  case BRAKE_IMPLAUSIBLE:
-					  if (!brake_implausible() && hv_switch() && drive_switch())
-						  change_state(DRIVE);
-
-					  if (!hv_switch() && !drive_switch())
-						  change_state(LV);
-
-					  if (!drive_switch())
-						  change_state(HV_ENABLED);
-
-					  if (!hv_switch())
-						  report_fault(HV_DISABLED_WHILE_DRIVING);
-
-					  break;
-				  case SHUTDOWN_CIRCUIT_OPEN:
-					  if (shutdown_closed()) {
-						  change_state(LV);
-					  }
-					  break;
-				  case HARD_BSPD:
-					  //should not be recoverable, but let hardware decide this
- //					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
- //						  change_state(LV);
- //			  		  }
-					  break;
-				  default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
-					  if (!hv_switch() && !drive_switch()) {
-						  change_state(LV);
-					  }
-					  break;
-			  }
-			  break;
-	 	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
@@ -999,16 +811,16 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
   /* DMA2_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
   /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
 
 }
@@ -1131,7 +943,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GASP_INTERRUPT_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -1141,6 +953,318 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_DashboardEntry */
+/**
+  * @brief  Function implementing the DashboardMain thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_DashboardEntry */
+void DashboardEntry(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+
+	init_sensors();
+
+	Display_Init();
+	UG_FontSelect(&FONT_12X16);
+	UG_SetBackcolor(C_BLACK);
+	UG_SetForecolor(C_YELLOW);
+
+	Display_CalibrateScreen();
+
+	Display_DriveTemplate();
+
+	if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK) {
+	  Error_Handler();
+	}
+	if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK) {
+	  Error_Handler();
+	}
+	if (HAL_TIM_Base_Start_IT(&htim4) != HAL_OK) {
+	  Error_Handler();
+	}
+
+	WheelSpeed_Init(&front_right_wheel_speed_t, &htim2);
+	WheelSpeed_Init(&front_left_wheel_speed_t, &htim4);
+
+  /* Infinite loop */
+  for(;;)
+  {
+	  Display_Update();
+
+	  if (display_debug_enabled && debug_btn_pressed()) {
+		 Display_DriveTemplate();
+		 display_debug_enabled = 0;
+	  }
+	  else if (debug_btn_pressed()) {
+		  Display_DebugTemplate();
+		  display_debug_enabled = 1;
+	  }
+
+	  //write_rx_to_sd();
+
+	  char sstr[100];
+	//	  sprintf(sstr, "apps1: %d, apps2: %d, bse: %d      ", throttle1.percent, throttle2.percent, brake.percent);
+	//	  UG_PutString(5, 250, sstr);
+
+	  update_sensor_vals(&hadc1, &hadc3);
+	  can_tx_vcu_state(&hcan1);
+	  can_tx_torque_request(&hcan1);
+
+	  // update front wheel speeds
+	  front_right_wheel_speed = WheelSpeed_GetCPS(&front_right_wheel_speed_t);
+	  front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
+
+	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d      ", front_right_wheel_speed, front_left_wheel_speed, back_right_wheel_speed);
+	  UG_PutString(5, 250, sstr);
+
+	  // Traction control
+	  if (traction_control_enable()) {
+		  traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
+	  }
+
+	  // If shutdown circuit opens in any state
+	  if (!shutdown_closed()) {
+		  report_fault(SHUTDOWN_CIRCUIT_OPEN);
+	  }
+
+	  //if hard BSPD trips in any state
+	//	  if (!HAL_GPIO_ReadPin(BSPD_LATCH){
+	//		  report_fault(HARD_BSPD);
+	//	  }
+	//
+	//	  if (mc_fault) {
+	//		  report_fault(MC_FAULT);
+	//	  }
+
+
+	  if (!init_fault_cleared) {
+		  can_clear_MC_fault(&hcan1);
+		  if (mc_fault_clear_success) {
+			 init_fault_cleared = 1;
+		  }
+	  }
+
+
+
+	  switch (state) {
+		  case STARTUP:
+			  run_calibration();
+
+			  if (!hv_switch() && !drive_switch()) {
+				  change_state(LV);
+			  }
+			  break;
+		  case LV:
+			  run_calibration();
+
+			  if (drive_switch()) {
+				  // Drive switch should not be enabled during LV
+				  report_fault(DRIVE_REQUEST_FROM_LV);
+				  break;
+			  }
+
+			  if (hv_switch()) {
+				  // HV switch was flipped
+				  // check if APPS pedal was calibrated
+				  if (sensors_calibrated()) {
+					  // Start charging the car to high voltage state
+					  add_apps_deadzone();
+					  change_state(PRECHARGING);
+				  } else {
+					  report_fault(UNCALIBRATED);
+				  }
+			  }
+
+			  break;
+		  case PRECHARGING:
+	//			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
+
+			  // if main AIRs closed
+			  if ((shutdown_flags & 0b110) == 0b110) {
+				  // Finished charging to HV on time
+				  change_state(HV_ENABLED);
+				  break;
+			  }
+			  if (!hv_switch()) {
+				  // Driver flipped off HV switch
+				  change_state(LV);
+				  break;
+			  }
+			  if (drive_switch()) {
+				  // Drive switch should not be enabled during PRECHARGING
+				  report_fault(DRIVE_REQUEST_FROM_LV);
+				  break;
+			  }
+			  break;
+		  case HV_ENABLED:
+			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
+				  // Driver flipped off HV switch
+				  change_state(LV);
+				  break;
+			  }
+
+			  if (drive_switch()) {
+				  // Driver flipped on drive switch
+				  // Need to press on pedal at the same time to go to drive
+
+	//				  if (brake_mashed()) {
+					  change_state(DRIVE);
+	//				  } else {
+	//					  // Driver didn't press pedal
+	//					  report_fault(BRAKE_NOT_PRESSED);
+	//				  }
+			  }
+
+			  break;
+		  case DRIVE:
+			  if (!drive_switch()) {
+				  // Drive switch was flipped off
+				  // Revert to HV
+				  change_state(HV_ENABLED);
+				 break;
+			  }
+
+			  if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules || capacitor_volt < PRECHARGE_THRESHOLD) {
+				  // HV switched flipped off, so can't drive
+				  // or capacitor dropped below threshold
+				  report_fault(HV_DISABLED_WHILE_DRIVING);
+				  break;
+			  }
+
+	//			  if (brake_implausible()) {
+	//				  report_fault(BRAKE_IMPLAUSIBLE);
+	//			  }
+
+			  break;
+		  case FAULT:
+			  switch (error) {
+				  case BRAKE_NOT_PRESSED:
+					  if (!hv_switch())
+						  change_state(LV);
+
+					  if (!drive_switch()) {
+						  // reset drive switch and try again
+						  change_state(HV_ENABLED);
+					  }
+					  break;
+				  case SENSOR_DISCREPANCY:
+					  // stop power to motors if discrepancy persists for >100ms
+					  // see rule T.4.2.5 in FSAE 2022 rulebook
+					  if (!drive_switch()) {
+						  discrepancy_timer_ms = 0;
+						  change_state(HV_ENABLED);
+					  }
+
+					  if (!hv_switch())
+						  report_fault(HV_DISABLED_WHILE_DRIVING);
+
+					  break;
+				  case BRAKE_IMPLAUSIBLE:
+					  if (!brake_implausible() && hv_switch() && drive_switch())
+						  change_state(DRIVE);
+
+					  if (!hv_switch() && !drive_switch())
+						  change_state(LV);
+
+					  if (!drive_switch())
+						  change_state(HV_ENABLED);
+
+					  if (!hv_switch())
+						  report_fault(HV_DISABLED_WHILE_DRIVING);
+
+					  break;
+				  case SHUTDOWN_CIRCUIT_OPEN:
+					  if (shutdown_closed()) {
+						  change_state(LV);
+					  }
+					  break;
+				  case HARD_BSPD:
+					  //should not be recoverable, but let hardware decide this
+	//					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
+	//						  change_state(LV);
+	//			  		  }
+					  break;
+				  default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
+					  if (!hv_switch() && !drive_switch()) {
+						  change_state(LV);
+					  }
+					  break;
+			  }
+			  break;
+		  }
+
+	  osDelay(10);
+  }
+
+
+  // in case we accidentally leave the infinite loop
+  osThreadTerminate(NULL);
+
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_SDCardEntry */
+/**
+* @brief Function implementing the SDCard thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_SDCardEntry */
+void SDCardEntry(void *argument)
+{
+  /* USER CODE BEGIN SDCardEntry */
+
+	int res = mount_sd_card();
+	if(!res){
+		//FAILED TO MOUNT SD CARD!
+		osThreadTerminate(NULL);
+	}
+	/* Infinite loop */
+	for(;;)
+	{
+		osDelay(100);
+		sd_card_write();
+	}
+
+  // in case we accidentally leave the infinite loop
+  osThreadTerminate(NULL);
+  /* USER CODE END SDCardEntry */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+	if (htim == &htim7)
+	{
+	  if (state == PRECHARGING) {
+		  precharge_timer_ms += TMR1_PERIOD_MS;
+		  if (precharge_timer_ms > PRECHARGE_TIMEOUT_MS) {
+			  report_fault(CONSERVATIVE_TIMER_MAXED);
+		  }
+	  } else {
+		  precharge_timer_ms = 0;
+	  }
+	}
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
