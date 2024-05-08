@@ -264,6 +264,17 @@ void Display_Update()
     draw_glv_v(glv_v);
 }
 
+void Debug_Display_Update() {
+	draw_soc(soc);
+	draw_bms_temp(PACK_TEMP);
+	draw_state(one_byte_state(), bms_status);
+	draw_glv_v(glv_v);
+	draw_mc_fault_state(mc_fault);
+	draw_motor_temp(motor_temp);
+	draw_mc_temp(0);
+	draw_shutdown(shutdown_flags);
+}
+
 
 void draw_soc(uint16_t soc)
 {
@@ -273,6 +284,29 @@ void draw_soc(uint16_t soc)
 void draw_bms_temp(uint16_t temp)
 {
 	draw_value_textbox(&bms_temp_box, temp);
+}
+
+void draw_mc_fault_state(uint16_t mc_fault_state){
+	draw_value_textbox(&mc_fault_state_box, mc_fault_state);
+}
+
+void draw_motor_temp(uint16_t motor_temp) {
+	draw_value_textbox(&motor_temp_box, motor_temp);
+}
+
+void draw_mc_temp(uint16_t mc_temp) {
+	draw_value_textbox(&mc_temp_box, mc_temp);
+}
+
+void draw_shutdown(uint16_t shutdown) {
+//	if (shutdown | 0b1) {
+//		strcpy(string, "PRECHARGE");
+//	}
+//	if(shutdown | 0b10) {
+//		strcpy(string, "AIR1");
+//	}
+//	draw_value_textbox(&shutdown_box, shutdown);
+
 }
 
 void draw_state(uint8_t state, uint16_t bms_status)

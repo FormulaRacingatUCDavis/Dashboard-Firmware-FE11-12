@@ -15,6 +15,7 @@ volatile uint8_t soc;
 volatile uint16_t bms_status;
 volatile uint8_t mc_fault_clear_success = 0;
 volatile uint16_t pack_voltage;
+volatile uint16_t motor_temp;
 
 volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
@@ -80,6 +81,9 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			back_right_wheel_speed += RxData[2];
 			back_right_wheel_speed *= -1;
 			break;
+		case MC_TEMP_3:
+			motor_temp = RxData[5] << 8;
+			motor_temp += RxData[4];
 		default:
 			// no valid input received
 			break;
