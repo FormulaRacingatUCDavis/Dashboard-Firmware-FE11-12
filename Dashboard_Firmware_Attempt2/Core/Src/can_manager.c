@@ -132,10 +132,19 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
     uint16_t throttle_msg_byte = 0;
     if (state == DRIVE) {
     	uint16_t throttle_req = requested_throttle();
+
+    	// deadzoning
     	if (throttle_req  < 50) {
     		throttle_req = 0;
     	}
+
+    	// adjust throttle with traction control
         throttle_msg_byte = throttle_req - TC_torque_adjustment;
+
+        // zero throttle if brake is pressed at all, prevents hardware bspd
+        if (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD)) {
+        	throttle_msg_byte = 0;
+        }
     }
 
     uint8_t byte5 = 0b010;   //speed mode | discharge_enable | inverter enable

@@ -108,11 +108,12 @@ static void MX_TIM7_Init(void);
 /************ Switches ************/
 
 uint8_t traction_control_enable() {
-	return HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
+	return !HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
 }
 
-uint8_t display_debug_enabled() {
-	return HAL_GPIO_ReadPin(GPIOG, BUTTON_2_Pin);
+volatile uint8_t display_debug_enabled = 0;
+uint8_t debug_btn_pressed() {
+	return !HAL_GPIO_ReadPin(GPIOG, BUTTON_2_Pin);
 }
 
 uint8_t hv_switch() {
@@ -242,6 +243,15 @@ int main(void)
 
 	  Display_Update();
 
+	  if (display_debug_enabled && debug_btn_pressed()) {
+		 Display_DriveTemplate();
+		 display_debug_enabled = 0;
+	  }
+	  else if (debug_btn_pressed()) {
+		  Display_DebugTemplate();
+		  display_debug_enabled = 1;
+	  }
+
 	  //write_rx_to_sd();
 
 	  char sstr[100];
@@ -288,13 +298,6 @@ int main(void)
 		  }
 	  }
 
-
-//	  if (display_debug_enabled()) {
-//		  Display_DebugTemplate();
-//	  }
-//	  else {
-//		  Display_DriveTemplate();
-//	  }
 
 
 	  switch (state) {

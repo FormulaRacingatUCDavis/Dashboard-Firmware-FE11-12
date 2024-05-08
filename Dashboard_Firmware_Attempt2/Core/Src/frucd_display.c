@@ -69,6 +69,10 @@ void draw_soc(uint16_t soc);
 void draw_bms_temp(uint16_t temp);
 void draw_state(uint8_t state, uint16_t bms_status);
 void draw_glv_v(uint32_t glv_v);
+void draw_mc_fault_state(uint8_t mc_fault_state);
+void draw_motor_temp(uint16_t motor_temp);
+void draw_mc_temp(uint16_t mc_temp);
+void draw_shutdown(uint8_t shutdown);
 void draw_value_textbox(TEXTBOX_CONFIG* cfg, uint16_t value);
 void draw_textbox(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str_len);
 UG_COLOR value_to_color(TEXTBOX_CONFIG cfg, uint16_t value);
@@ -252,9 +256,11 @@ void Display_DriveTemplate()
 	glv_v_box.last_color = C_BLACK;  // force box redraw
 }
 
+
+uint32_t glv_v = 99999; // test
+
 void Display_Update()
 {
-	static uint32_t glv_v = 99999;
 //	soc = soc+1 ;
 //	glv_v+=1;
 
@@ -286,7 +292,7 @@ void draw_bms_temp(uint16_t temp)
 	draw_value_textbox(&bms_temp_box, temp);
 }
 
-void draw_mc_fault_state(uint16_t mc_fault_state){
+void draw_mc_fault_state(uint8_t mc_fault_state){
 	draw_value_textbox(&mc_fault_state_box, mc_fault_state);
 }
 
@@ -298,14 +304,14 @@ void draw_mc_temp(uint16_t mc_temp) {
 	draw_value_textbox(&mc_temp_box, mc_temp);
 }
 
-void draw_shutdown(uint16_t shutdown) {
+void draw_shutdown(uint8_t shutdown) {
 //	if (shutdown | 0b1) {
 //		strcpy(string, "PRECHARGE");
 //	}
 //	if(shutdown | 0b10) {
 //		strcpy(string, "AIR1");
 //	}
-//	draw_value_textbox(&shutdown_box, shutdown);
+	draw_value_textbox(&shutdown_box, shutdown);
 
 }
 

@@ -205,7 +205,7 @@ bool has_discrepancy() {
 }
 
 // check for soft BSPD
-// see EV.5.7 of FSAE 2022 rulebook
+// see EV.4.7 of FSAE 2024 rulebook
 bool brake_implausible() {
     if (error == BRAKE_IMPLAUSIBLE) {
         // once brake implausibility detected,
@@ -215,8 +215,7 @@ bool brake_implausible() {
 
     // if both brake and throttle applied, brake implausible
     //return (temp_brake > 0 && temp_throttle > throttle_range * 0.25);
-    return (brake.raw >= BRAKE_BSPD_THRESHOLD && throttle1.percent > APPS1_BSPD_THRESHOLD);
-	return false;
+    return (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD) && throttle1.percent > APPS1_BSPD_THRESHOLD);
 }
 
 void update_percent(CALIBRATED_SENSOR_t* sensor){
