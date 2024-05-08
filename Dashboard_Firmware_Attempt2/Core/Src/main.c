@@ -230,11 +230,6 @@ int main(void)
   WheelSpeed_Init(&front_right_wheel_speed_t, &htim2);
   WheelSpeed_Init(&front_left_wheel_speed_t, &htim4);
 
-  if(display_debug_enabled()) {
-	  Display_DebugTemplate();
-
-  }
-
 
 //  mount_sd_card();
 
@@ -451,6 +446,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
@@ -815,7 +811,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 8000;
+  htim4.Init.Prescaler = 0;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
