@@ -6,7 +6,7 @@
 volatile uint8_t mc_lockout;
 volatile uint8_t mc_enabled;
 volatile uint16_t capacitor_volt = 0;
-volatile uint8_t shutdown_flags = 0b00111000;  //start with shutdown flags OK
+volatile uint8_t shutdown_flags = 0b0011111000;  //start with shutdown flags OK
 volatile uint8_t estop_flags = 0;
 volatile uint8_t switches = 0xC0;   //start with switches on to stay in startup state
 volatile uint8_t PACK_TEMP;
@@ -16,6 +16,7 @@ volatile uint16_t bms_status;
 volatile uint8_t mc_fault_clear_success = 0;
 volatile uint16_t pack_voltage;
 volatile uint16_t motor_temp;
+volatile uint16_t mc_temp;
 
 volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
@@ -84,6 +85,10 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 		case MC_TEMP_3:
 			motor_temp = RxData[5] << 8;
 			motor_temp += RxData[4];
+		case MC_TEMP:
+			mc_temp = RxData[0] << 8;
+			mc_temp += RxData[1];
+
 		default:
 			// no valid input received
 			break;

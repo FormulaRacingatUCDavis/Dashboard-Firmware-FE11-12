@@ -277,7 +277,7 @@ void Debug_Display_Update() {
 	draw_glv_v(glv_v);
 	draw_mc_fault_state(mc_fault);
 	draw_motor_temp(motor_temp);
-	draw_mc_temp(0);
+	draw_mc_temp(mc_temp);
 	draw_shutdown(shutdown_flags);
 }
 
@@ -301,17 +301,41 @@ void draw_motor_temp(uint16_t motor_temp) {
 }
 
 void draw_mc_temp(uint16_t mc_temp) {
-	draw_value_textbox(&mc_temp_box, mc_temp);
+	UG_COLOR color;
+	color = C_GREEN;
+	char string [6];
+	draw_textbox(&mc_temp_box, color, string, 6);
 }
 
 void draw_shutdown(uint8_t shutdown) {
-//	if (shutdown | 0b1) {
-//		strcpy(string, "PRECHARGE");
-//	}
-//	if(shutdown | 0b10) {
-//		strcpy(string, "AIR1");
-//	}
-	draw_value_textbox(&shutdown_box, shutdown);
+
+	char string[14];
+	UG_COLOR color;
+	color = C_GREEN;
+	//the 1 is the bit you want to extract
+	if (!(shutdown | 0b1)) {
+		strcpy(string, "  PRECHARGE   ");
+	}
+	if(!(shutdown | 0b10)) {
+		strcpy(string, "     AIR1     ");
+	}
+	if(!(shutdown | 0b100)) {
+		strcpy(string, "     AIR2     ");
+	}
+	if(!(shutdown | 0b1000)) {
+		strcpy(string, "SHUTDOWN FINAL");
+	}
+	if(!(shutdown | 0b10000)) {
+		strcpy(string, "    BMS_OK    ");
+	}
+	if(!(shutdown | 0b100000)) {
+		strcpy(string, "    IMD_OK    ");
+	}
+	else {
+		strcpy(string, " NO SHUTDOWN ");
+	}
+
+	draw_textbox(&shutdown_box, color, string, 14);
 
 }
 
