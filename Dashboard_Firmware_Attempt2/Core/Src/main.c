@@ -31,6 +31,7 @@
 #include "frucd_display.h"
 #include "sd_card.h"
 #include "wheel_speed.h"
+#include "stm_to_esp.h"
 
 
 /* USER CODE END Includes */
@@ -231,7 +232,7 @@ int main(void)
   WheelSpeed_Init(&front_right_wheel_speed_t, &htim2);
   WheelSpeed_Init(&front_left_wheel_speed_t, &htim4);
 
-
+  timer_init();
 //  mount_sd_card();
 
   /* USER CODE END 2 */
@@ -299,6 +300,7 @@ int main(void)
 	  }
 
 
+	  read_send_loop();
 
 	  switch (state) {
 		  case STARTUP:
