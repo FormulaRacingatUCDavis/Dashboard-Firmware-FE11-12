@@ -19,8 +19,14 @@ volatile uint16_t motor_temp;
 volatile uint16_t mc_temp;
 volatile int16_t glv_v;
 
-volatile uint16_t back_right_wheel_speed = 0;
-volatile uint16_t back_left_wheel_speed = 0;
+volatile uint16_t rear_right_wheel_speed = 0;
+volatile uint16_t rear_left_wheel_speed = 0;
+volatile uint8_t wheel_updated[2] = {1,0};
+volatile int16_t inlet_temp = 0;
+volatile int16_t outlet_temp = 0;
+volatile int16_t inlet_pres = 0;
+volatile int16_t outlet_pres = 0;
+volatile uint16_t telem_id = 0;
 
 CAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[8];
@@ -73,16 +79,30 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			}
 			break;
 //		case WHEEL_SPEED_REAR:
-//			back_right_wheel_speed = (RxData[0] << 8) ;
-//			back_right_wheel_speed += RxData[1];
-//			back_left_wheel_speed = (RxData[2] << 8) ;
-//			back_left_wheel_speed += RxData[3];
+//			rear_right_wheel_speed = (RxData[0] << 8);
+//			rear_right_wheel_speed += RxData[1];
+//			rear_left_wheel_speed = (RxData[2] << 8);
+//			rear_left_wheel_speed += RxData[3];
+//			wheel_updated[1] = 1;
+//			telem_id = 0;
 //			break;
 		case MC_MOTOR_POSITION:
-			back_right_wheel_speed = (RxData[3] << 8);
-			back_right_wheel_speed += RxData[2];
-			back_right_wheel_speed *= -1;
+			rear_right_wheel_speed = (RxData[3] << 8);
+			rear_right_wheel_speed += RxData[2];
+			rear_right_wheel_speed *= -1;
+			wheel_updated[1] = 1;
+			telem_id = 0;
 			break;
+		case COOLING_LOOP:
+			inlet_temp = (RxData[0] << 8);
+			inlet_temp += RxData[1];
+			outlet_temp = (RxData[2] << 8);
+			outlet_temp += RxData[3];
+			inlet_pres = (RxData[4] << 8);
+			inlet_pres += RxData[5];
+			outlet_pres = (RxData[6] << 8);
+			outlet_pres += RxData[7];
+			telem_id = 1;
 		case MC_TEMP_3:
 			motor_temp = RxData[5] << 8;
 			motor_temp += RxData[4];
@@ -90,11 +110,11 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			uint16_t module_a_temp = (RxData[1] << 8) + RxData[0];
 			uint16_t module_b_temp = (RxData[3] << 8) + RxData[2];
 			uint16_t module_c_temp = (RxData[5] << 8) + RxData[4];
-			mc_temp = (module_a_temp + module_b_temp + module_c_temp) / (3*10); // avging and unit conversion
+			mc_temp = (module_a_temp + module_b_temp + module_c_temp) / 3; // no unit conversion, don't want to store float
 			break;
 		case MC_INTERNAL_VOLTS:
 			glv_v = RxData[7] << 8;
-			glv_v += RxData[6]; // no unit conversion bc don't want to store float
+			glv_v += RxData[6]; // no unit conversion, don't want to store float
 		default:
 			// no valid input received
 			break;

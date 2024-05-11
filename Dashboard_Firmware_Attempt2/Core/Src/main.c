@@ -31,7 +31,7 @@
 #include "frucd_display.h"
 #include "sd_card.h"
 #include "wheel_speed.h"
-#include "stm_to_esp.h"
+#include "telem.h"
 #include "xsens.h"
 
 
@@ -258,6 +258,8 @@ int main(void)
 	  }
 
 
+	  // telem
+	  telem_send();
 	  //write_rx_to_sd();
 
 	  char sstr[100];

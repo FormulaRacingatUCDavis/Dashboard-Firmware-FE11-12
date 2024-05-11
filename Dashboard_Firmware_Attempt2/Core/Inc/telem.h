@@ -1,9 +1,16 @@
-#ifndef SRC_STM_TO_ESP_H_
-#define SRC_STM_TO_ESP_H_
+/*
+ * telem.h
+ *
+ *  Created on: Apr 26, 2024
+ *      Author: nickr
+ */
 
-#include "main.h"
+#ifndef INC_TELEM_H_
+#define INC_TELEM_H_
 
 #define PACKET_LENGTH 16
+
+#define TELEM_DELAY 20
 
 typedef struct __attribute__((__packed__)) Packet {
 	uint8_t validation[2];
@@ -13,8 +20,6 @@ typedef struct __attribute__((__packed__)) Packet {
 } Packet;
 
 // Function prototypes
-void timer_init(void);
-void read_send_loop(void);
-void reset(void);
+void telem_send(void);
 
-#endif /* SRC_STM_TO_ESP_H_ */
+#endif /* INC_TELEM_H_ */

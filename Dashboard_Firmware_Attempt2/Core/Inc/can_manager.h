@@ -29,7 +29,8 @@ typedef enum {
     WHEEL_SPEED_REAR = 0x401,
 	MC_TEMP_1 = 0xA0,
 	MC_TEMP_3 = 0x0A2,
-	MC_INTERNAL_VOLTS = 0x0A9
+	MC_INTERNAL_VOLTS = 0x0A9,
+	COOLING_LOOP = 0x400
 } CAN_ID;
 
 extern volatile uint8_t mc_lockout;
@@ -48,15 +49,20 @@ extern volatile uint16_t motor_temp;
 extern volatile uint16_t mc_temp;
 extern volatile int16_t glv_v;
 
+extern volatile uint16_t rear_right_wheel_speed;
+extern volatile uint16_t rear_left_wheel_speed;
+extern volatile uint8_t wheel_updated[2];
+extern volatile int16_t inlet_temp;
+extern volatile int16_t outlet_temp;
+extern volatile int16_t inlet_pres;
+extern volatile int16_t outlet_pres;
+extern volatile uint16_t telem_id;
+
 extern CAN_RxHeaderTypeDef RxHeader;
 extern uint8_t RxData[8];
 
 extern CAN_TxHeaderTypeDef   TxHeader;
 extern uint32_t              TxMailbox;
-
-// From TCAN
-extern volatile uint16_t back_right_wheel_speed;
-extern volatile uint16_t back_left_wheel_speed;
 
 void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]);
 void can_tx_vcu_state(CAN_HandleTypeDef *hcan);

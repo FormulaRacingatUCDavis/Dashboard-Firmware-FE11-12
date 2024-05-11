@@ -295,14 +295,34 @@ void draw_mc_fault_state(uint8_t mc_fault_state){
 }
 
 void draw_motor_temp(uint16_t motor_temp) {
-	draw_value_textbox(&motor_temp_box, motor_temp);
+	float converted_motor_temp = motor_temp/10.0;
+	UG_COLOR color;
+	if (converted_motor_temp < 45) {
+		color = C_GREEN;
+	} else if (converted_motor_temp < 50) {
+		color = C_YELLOW;
+	} else {
+		color = C_RED;
+	}
+
+	char str[11];
+	sprintf(str, "%.1f", converted_motor_temp);
+	draw_textbox(&motor_temp_box, color, str, 11);
 }
 
 void draw_mc_temp(uint16_t mc_temp) {
+	float converted_mc_temp = mc_temp/10.0;
 	UG_COLOR color;
-	color = C_GREEN;
-	char string [6];
-	draw_textbox(&mc_temp_box, color, string, 6);
+	if (converted_mc_temp < 45) {
+		color = C_GREEN;
+	} else if (converted_mc_temp < 50) {
+		color = C_YELLOW;
+	} else {
+		color = C_RED;
+	}
+	char str[11];
+	sprintf(str, "%.1f", converted_mc_temp);
+	draw_textbox(&mc_temp_box, color, str, 11);
 }
 
 void draw_shutdown(uint8_t shutdown) {
