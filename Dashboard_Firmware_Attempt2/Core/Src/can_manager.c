@@ -114,6 +114,7 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	TxHeader.StdId = VEHICLE_STATE;
 	TxHeader.RTR = CAN_RTR_DATA;
 	TxHeader.DLC = 8;
+	uint16_t tick = (uint16_t)HAL_GetTick();
 	uint8_t data_tx_state[8] = {
         0,
         hv_requested(),
@@ -121,8 +122,26 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
         throttle2.percent,
 		brake.percent,
         one_byte_state(),
-		0,
-		0
+		(tick >> 8) & 0xFF,
+		tick & 0xFF
+    };
+
+    if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_state, &TxMailbox) != HAL_OK)
+	{
+	  print("CAN Tx failed\r\n");
+	}
+//    write_tx_to_sd(TxHeader, data_tx_state);
+}
+
+//  transmit state
+void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc){
+	TxHeader.IDE = CAN_ID_STD;
+	TxHeader.StdId = 0x500;
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.DLC = 2;
+	uint8_t data_tx_state[2] = {
+		(adc >> 8) & 0xFF,
+		(adc & 0xFF)
     };
 
     if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_state, &TxMailbox) != HAL_OK)

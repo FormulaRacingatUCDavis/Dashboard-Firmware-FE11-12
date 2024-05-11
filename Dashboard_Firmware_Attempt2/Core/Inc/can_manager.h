@@ -63,6 +63,7 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan);
 void can_tx_torque_request(CAN_HandleTypeDef *hcan);
 void can_tx_disable_MC(CAN_HandleTypeDef *hcan);
 void can_clear_MC_fault(CAN_HandleTypeDef *hcan);
+void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc);
 
 #endif /* SRC_CAN_MANAGER_H_ */
 

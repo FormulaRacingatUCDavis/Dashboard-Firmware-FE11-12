@@ -32,6 +32,7 @@
 #include "sd_card.h"
 #include "wheel_speed.h"
 #include "stm_to_esp.h"
+#include "xsens.h"
 
 
 /* USER CODE END Includes */
@@ -71,6 +72,7 @@ TIM_HandleTypeDef htim7;
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_uart4_rx;
 
 SRAM_HandleTypeDef hsram1;
 
@@ -269,8 +271,10 @@ int main(void)
 	  // update front wheel speeds
 	  front_right_wheel_speed = WheelSpeed_GetCPS(&front_right_wheel_speed_t);
 	  front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
+	  uint16_t sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
+	  can_tx_sg(&hcan1, sg_adc);
 
-	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d      ", front_right_wheel_speed, front_left_wheel_speed, back_right_wheel_speed);
+	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u      ", front_right_wheel_speed, front_left_wheel_speed, back_right_wheel_speed, sg_adc);
 	  UG_PutString(5, 250, sstr);
 
 	  // Traction control
@@ -293,15 +297,16 @@ int main(void)
 //	  }
 
 
-	  if (!init_fault_cleared) {
+	  if (mc_fault) {
 		  can_clear_MC_fault(&hcan1);
-		  if (mc_fault_clear_success) {
-			 init_fault_cleared = 1;
-		  }
+		//  if (mc_fault_clear_success) {
+			// init_fault_cleared = 1;
+		//  }
 	  }
 
 
 	  read_send_loop();
+	  //Xsens_Update(&huart4);
 
 	  switch (state) {
 		  case STARTUP:
@@ -901,7 +906,7 @@ static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 2000000;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -998,8 +1003,12 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -1098,12 +1107,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : EXTRA_SENS_1_Pin */
-  GPIO_InitStruct.Pin = EXTRA_SENS_1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(EXTRA_SENS_1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : HEARTBEAT_Pin */
   GPIO_InitStruct.Pin = HEARTBEAT_Pin;

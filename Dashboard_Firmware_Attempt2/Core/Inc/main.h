@@ -73,8 +73,6 @@ uint8_t traction_control_enable();
 #define APP2_GPIO_Port GPIOF
 #define APP1_Pin GPIO_PIN_0
 #define APP1_GPIO_Port GPIOC
-#define EXTRA_SENS_1_Pin GPIO_PIN_1
-#define EXTRA_SENS_1_GPIO_Port GPIOC
 #define KNOB_2_Pin GPIO_PIN_2
 #define KNOB_2_GPIO_Port GPIOC
 #define KNOB_1_Pin GPIO_PIN_3

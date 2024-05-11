@@ -84,6 +84,14 @@ void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
 //				Error_Handler();
 			}
 			break;
+        case STRAIN_GAUGE:
+			sConfig.Channel = ADC_CHANNEL_11;
+			sConfig.Rank = 1;
+			if (HAL_ADC_ConfigChannel(hadc, &sConfig) != HAL_OK)
+			{
+//				Error_Handler();
+			}
+			break;
         default:
             break;
     }

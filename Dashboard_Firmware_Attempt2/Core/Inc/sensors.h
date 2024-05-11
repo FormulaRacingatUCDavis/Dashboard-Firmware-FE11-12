@@ -50,7 +50,8 @@ typedef enum {
 	APPS2,
 	BSE,
 	KNOB1,
-	KNOB2
+	KNOB2,
+	STRAIN_GAUGE
 } ADC_CHAN;
 
 
