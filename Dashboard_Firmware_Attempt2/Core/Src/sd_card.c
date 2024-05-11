@@ -16,6 +16,7 @@ extern FIL SDFile;
 char buffer[BUFLEN];
 uint32_t ind = 0;
 uint32_t index_top = 0;
+UINT byteswritten;
 
 
 extern CAN_HandleTypeDef hcan1;
@@ -86,7 +87,6 @@ void write_tx_to_sd(CAN_TxHeaderTypeDef TxHeader, uint8_t TxData[]){
 
 void sd_card_write(void){
 	static uint32_t last_write_index = 0;
-	UINT byteswritten;
 
 	if(ind == last_write_index){
 		return;

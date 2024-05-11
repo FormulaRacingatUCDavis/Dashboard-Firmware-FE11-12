@@ -78,14 +78,14 @@ SRAM_HandleTypeDef hsram1;
 osThreadId_t DashboardMainHandle;
 const osThreadAttr_t DashboardMain_attributes = {
   .name = "DashboardMain",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for SDCard */
 osThreadId_t SDCardHandle;
 const osThreadAttr_t SDCard_attributes = {
   .name = "SDCard",
-  .stack_size = 128 * 4,
+  .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* USER CODE BEGIN PV */
@@ -172,6 +172,7 @@ WheelSpeed_t front_left_wheel_speed_t;
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -255,6 +256,7 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
