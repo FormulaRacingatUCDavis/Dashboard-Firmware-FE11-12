@@ -3,6 +3,7 @@
 #include "ugui.h"
 #include "telem.h"
 #include "can_manager.h"
+#include "wheel_speed.h"
 
 const uint8_t packet_validation[2] = {0x00, 0xff};
 uint32_t send_time;

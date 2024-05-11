@@ -236,7 +236,6 @@ int main(void)
   WheelSpeed_Init(&front_right_wheel_speed_t, &htim2);
   WheelSpeed_Init(&front_left_wheel_speed_t, &htim4);
 
-  timer_init();
 //  mount_sd_card();
 
   /* USER CODE END 2 */
@@ -278,7 +277,7 @@ int main(void)
 	  uint16_t sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
 	  can_tx_sg(&hcan1, sg_adc);
 
-	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u      ", front_right_wheel_speed, front_left_wheel_speed, back_right_wheel_speed, sg_adc);
+	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u      ", front_right_wheel_speed, front_left_wheel_speed, rear_right_wheel_speed, sg_adc);
 	  UG_PutString(5, 250, sstr);
 
 	  // traction control toggle
@@ -316,8 +315,6 @@ int main(void)
 		//  }
 	  }
 
-
-	  read_send_loop();
 	  //Xsens_Update(&huart4);
 
 	  switch (state) {

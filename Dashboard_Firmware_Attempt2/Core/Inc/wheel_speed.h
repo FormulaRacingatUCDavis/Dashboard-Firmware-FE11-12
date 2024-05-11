@@ -21,6 +21,9 @@ typedef struct
 	uint32_t last_count;
 } WheelSpeed_t;
 
+extern volatile uint32_t front_right_wheel_speed;
+extern volatile uint32_t front_left_wheel_speed;
+
 void WheelSpeed_Init(WheelSpeed_t* ws, TIM_HandleTypeDef* h_tim);
 uint32_t WheelSpeed_GetCPS(WheelSpeed_t* ws);
 

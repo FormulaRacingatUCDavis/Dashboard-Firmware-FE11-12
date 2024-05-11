@@ -30,8 +30,8 @@ void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
 
     // units are in RPM/CPS
     const float avg_front_wheel_speed = (fr_wheel_speed + fl_wheel_speed)/2.0;
-    const float avg_back_wheel_speed = back_right_wheel_speed; // (back_right_wheel_speed + back_left_wheel_speed)/2.0;
-    const float current_slip_ratio = avg_back_wheel_speed/avg_front_wheel_speed;
+    const float avg_rear_wheel_speed = rear_right_wheel_speed; // (back_right_wheel_speed + back_left_wheel_speed)/2.0;
+    const float current_slip_ratio = avg_rear_wheel_speed/avg_front_wheel_speed;
 
 //    // calculate dynamic slip ratio
 //    target_slip_ratio = 0.1 - 0.01*(avg_back_wheel_speed/max_wheel_speed);
