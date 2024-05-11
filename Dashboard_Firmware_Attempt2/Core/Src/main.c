@@ -212,6 +212,7 @@ int main(void)
 
   Display_Init();
   UG_FontSelect(&FONT_12X16);
+
   UG_SetBackcolor(C_BLACK);
   UG_SetForecolor(C_YELLOW);
 
@@ -451,7 +452,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }

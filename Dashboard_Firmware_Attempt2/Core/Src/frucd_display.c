@@ -68,7 +68,7 @@ UG_GUI gui1963;
 void draw_soc(uint16_t soc);
 void draw_bms_temp(uint16_t temp);
 void draw_state(uint8_t state, uint16_t bms_status);
-void draw_glv_v(uint32_t glv_v);
+void draw_glv_v(int16_t glv_v);
 void draw_mc_fault_state(uint8_t mc_fault_state);
 void draw_motor_temp(uint16_t motor_temp);
 void draw_mc_temp(uint16_t mc_temp);
@@ -256,8 +256,6 @@ void Display_DriveTemplate()
 	glv_v_box.last_color = C_BLACK;  // force box redraw
 }
 
-
-uint32_t glv_v = 99999; // test
 
 void Display_Update()
 {
@@ -469,23 +467,19 @@ void draw_state(uint8_t state, uint16_t bms_status)
 }
 
 
-void draw_glv_v(uint32_t data) {
-    // translate from voltage divider measurement to true voltage
-    // y = 0.4295x + 18.254
-    data *= 859;
-    data /= 2000; // 0.4295
-    data += 18;
+void draw_glv_v(int16_t data) {
+	float converted_glv_v = data/100.0;
     UG_COLOR color;
-    if (data > 1150) {
+    if (converted_glv_v > 10) {
         color = C_GREEN;
-    } else if (data > 1100) {
+    } else if (converted_glv_v > 9) {
         color = C_YELLOW;
     } else {
     	color = C_RED;
     }
 
-    char str[6];
-    sprintf(str, "%ld", data);
+    char str[11];
+    sprintf(str, "%.2f", converted_glv_v);
     draw_textbox(&glv_v_box, color, str, 11);
 }
 

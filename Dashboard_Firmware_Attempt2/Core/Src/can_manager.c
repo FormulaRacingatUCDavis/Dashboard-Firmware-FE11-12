@@ -17,6 +17,7 @@ volatile uint8_t mc_fault_clear_success = 0;
 volatile uint16_t pack_voltage;
 volatile uint16_t motor_temp;
 volatile uint16_t mc_temp;
+volatile int16_t glv_v;
 
 volatile uint16_t back_right_wheel_speed = 0;
 volatile uint16_t back_left_wheel_speed = 0;
@@ -78,17 +79,22 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 //			back_left_wheel_speed += RxData[3];
 //			break;
 		case MC_MOTOR_POSITION:
-			back_right_wheel_speed = (RxData[3] << 8) ;
+			back_right_wheel_speed = (RxData[3] << 8);
 			back_right_wheel_speed += RxData[2];
 			back_right_wheel_speed *= -1;
 			break;
 		case MC_TEMP_3:
 			motor_temp = RxData[5] << 8;
 			motor_temp += RxData[4];
-		case MC_TEMP:
-			mc_temp = RxData[0] << 8;
-			mc_temp += RxData[1];
-
+		case MC_TEMP_1:
+			uint16_t module_a_temp = (RxData[1] << 8) + RxData[0];
+			uint16_t module_b_temp = (RxData[3] << 8) + RxData[2];
+			uint16_t module_c_temp = (RxData[5] << 8) + RxData[4];
+			mc_temp = (module_a_temp + module_b_temp + module_c_temp) / (3*10); // avging and unit conversion
+			break;
+		case MC_INTERNAL_VOLTS:
+			glv_v = RxData[7] << 8;
+			glv_v += RxData[6]; // no unit conversion bc don't want to store float
 		default:
 			// no valid input received
 			break;

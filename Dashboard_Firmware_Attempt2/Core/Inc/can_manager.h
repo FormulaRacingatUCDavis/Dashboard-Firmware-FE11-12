@@ -27,8 +27,9 @@ typedef enum {
 	MC_PARAM_RESPONSE = 0x0C2,
 	MC_MOTOR_POSITION = 0x0A5,
     WHEEL_SPEED_REAR = 0x401,
+	MC_TEMP_1 = 0xA0,
 	MC_TEMP_3 = 0x0A2,
-	MC_TEMP = 0x400,
+	MC_INTERNAL_VOLTS = 0x0A9
 } CAN_ID;
 
 extern volatile uint8_t mc_lockout;
@@ -45,6 +46,7 @@ extern volatile uint8_t mc_fault_clear_success;
 extern volatile uint16_t pack_voltage;
 extern volatile uint16_t motor_temp;
 extern volatile uint16_t mc_temp;
+extern volatile int16_t glv_v;
 
 extern CAN_RxHeaderTypeDef RxHeader;
 extern uint8_t RxData[8];
