@@ -50,7 +50,7 @@ void read_send_loop(void) {
 		    HAL_UART_Transmit(&huart7, (uint8_t*)&p, PACKET_LENGTH, 1000);
 		    reset();
 		    // delay 20 ms, can't send too fast
-		    HAL_Delay(20);
+		    //HAL_Delay(20);
 		}
 	}
 }
