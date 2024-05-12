@@ -14,6 +14,7 @@
 
 extern volatile uint16_t TC_control_var;
 extern volatile uint16_t TC_torque_adjustment;
+extern volatile float current_slip_ratio;
 
 extern volatile uint16_t pid_error;
 extern volatile uint16_t prev_pid_error;

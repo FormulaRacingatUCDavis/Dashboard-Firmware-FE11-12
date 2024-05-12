@@ -277,21 +277,28 @@ int main(void)
 	  uint16_t sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
 	  can_tx_sg(&hcan1, sg_adc);
 
-	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u      ", front_right_wheel_speed, front_left_wheel_speed, rear_right_wheel_speed, sg_adc);
+	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u   ", front_right_wheel_speed, front_left_wheel_speed, rear_right_wheel_speed, sg_adc);
 	  UG_PutString(5, 250, sstr);
 
 	  // traction control toggle
 	  if (traction_control_enabled && traction_control_pressed()) {
 		  traction_control_enabled = 0;
+		  sprintf(sstr, "TC OFF");
+		  UG_PutString(400, 250, sstr);
 	  }
 	  else if (traction_control_pressed()) {
 		  traction_control_enabled = 1;
+		  sprintf(sstr, "TC ON  ");
+		  UG_PutString(400, 250, sstr);
 	  }
 
 	  // run traction control
 	  if (traction_control_enabled) {
 		  traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	  }
+
+	  sprintf(sstr, "ctrl: %d, slip rat: %.2f", TC_control_var, current_slip_ratio);
+	  UG_PutString(5, 1, sstr);
 
 	  // If shutdown circuit opens in any state
 	  if (!shutdown_closed()) {
