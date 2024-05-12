@@ -92,10 +92,10 @@ void sd_card_write(void){
 	if(ind == last_write_index){
 		return;
 	} else if(ind > last_write_index){
-		res = f_write(&SDFile, &buffer[last_write_index], (ind - last_write_index), &byteswritten);
+		res = f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &byteswritten);
 	} else { // index < last_write_index
-		res = f_write(&SDFile, &buffer[last_write_index], (index_top - last_write_index), &byteswritten);
-		res = f_write(&SDFile, &buffer[0], ind, &byteswritten);
+		res = f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &byteswritten);
+		res = f_write(&SDFile, buffer, ind, &byteswritten);
 	}
 
 	f_sync(&SDFile); // sync less often?
