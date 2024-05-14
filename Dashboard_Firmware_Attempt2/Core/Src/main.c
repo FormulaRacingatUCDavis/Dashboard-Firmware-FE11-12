@@ -1203,7 +1203,7 @@ void DashboardEntry(void *argument)
 
 
   // in case we accidentally leave the infinite loop
-  osThreadTerminate(NULL);
+  osThreadTerminate(osThreadGetId());
 
   /* USER CODE END 5 */
 }
@@ -1222,7 +1222,7 @@ void SDCardEntry(void *argument)
 	int res = mount_sd_card();
 	if(!res){
 		//FAILED TO MOUNT SD CARD!
-		osThreadTerminate(NULL);
+		osThreadTerminate(osThreadGetId());
 	}
 	/* Infinite loop */
 	for(;;)
@@ -1232,7 +1232,7 @@ void SDCardEntry(void *argument)
 	}
 
   // in case we accidentally leave the infinite loop
-  osThreadTerminate(NULL);
+  osThreadTerminate(osThreadGetId());
   /* USER CODE END SDCardEntry */
 }
 

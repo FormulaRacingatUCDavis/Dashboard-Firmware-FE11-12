@@ -25,36 +25,28 @@ extern uint8_t RxData[8];
 
 
 int mount_sd_card(void) {
-  	 FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 0);
+  	 FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
+  	 if (res != FR_OK) return 0;
+
   	 char filename[20];
 
   	 // name the file, increment until filename that hasnt been taken
-  	 int num = 65;
+  	 uint8_t num = 0;
   	 while (1) {
   		  FIL F1;
 
-  		  sprintf(filename, "run_%c.txt", (char)num);
+  		  sprintf(filename, "run_%u.txt", num);
 
   		  FRESULT f_open_status = f_open(&F1, filename, FA_READ);
 
   		  // if found filename thats not taken, use it
-  		  if (f_open_status != FR_OK) {
+  		  if (f_open_status == FR_NO_FILE) {
   			  f_close(&F1);
   			  break;
   		  }
-
-  		  // if current file more than 9000000 bytes, move onto next file
-  		  // else, use current file
-  		  if (f_size(&F1) >= 9000000) {
-  			  num++;
-  		  }
-  		  else {
-  			  break;
-  		  }
+  		  num++;
 
   		  f_close(&F1);
-
-
   	 }
 
 	 res = f_open(&SDFile, filename,  FA_OPEN_APPEND | FA_OPEN_ALWAYS | FA_WRITE);
