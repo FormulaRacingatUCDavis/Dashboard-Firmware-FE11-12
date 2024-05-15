@@ -166,8 +166,8 @@ void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc){
 		front_right_wheel_speed & 0xff,
 //		front_left_wheel_speed >> 8,
 //		front_left_wheel_speed & 0xff,
-		TC_control_var  >> 8,
-		TC_control_var & 0xff,
+		TC_torque_adjustment  >> 8,
+		TC_torque_adjustment & 0xff,
     };
 
     if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_state, &TxMailbox) != HAL_OK)

@@ -21,7 +21,10 @@ uint32_t WheelSpeed_GetCPS(WheelSpeed_t* ws)
 	uint32_t tick = HAL_GetTick();
 	uint32_t count = __HAL_TIM_GET_COUNTER(ws->h_tim);
 
-	uint32_t cps = 1000 * (count - ws->last_count) / (tick - ws->last_tick);
+	uint32_t diff = tick - ws->last_tick;
+	if(diff == 0) diff = 1; // prevent divide by 0
+
+	uint32_t cps = 1000 * (count - ws->last_count) / diff;
 
 	ws->last_count = count;
 	ws->last_tick = tick;
