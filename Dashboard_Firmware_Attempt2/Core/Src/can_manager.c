@@ -23,6 +23,17 @@ volatile uint16_t back_left_wheel_speed = 0;
 CAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[8];
 
+uint8_t mc_voltage_msg_counter = 0;
+uint8_t mc_state_msg_counter = 0;
+uint8_t mc_fault_msg_counter = 0;
+uint8_t mc_param_msg_counter = 0;
+uint8_t mc_motor_pos_msg_counter = 0;
+uint8_t mc_temp_msg_counter = 0;
+
+uint8_t torque_request_msg_counter = 0;
+uint8_t vcu_state_msg_counter = 0;
+
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
@@ -42,21 +53,37 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			bms_status += RxData[3];
 			pack_voltage = (RxData[4] << 8);
 			pack_voltage += RxData[5];
+
 			write_rx_to_sd();
 			temp_attenuate();
 			break;
 		case MC_VOLTAGE_INFO:
 			capacitor_volt = (RxData[0] << 8); // upper bits
 			capacitor_volt += RxData[1]; // lower bits
+
+			if (mc_voltage_msg_counter == 0) write_rx_to_sd();
+			mc_voltage_msg_counter++;
+			mc_voltage_msg_counter %= 100;
+
 			break;
 		case MC_INTERNAL_STATES:
 			mc_lockout = RxData[6] & 0b1000000;
 			mc_enabled = RxData[6] & 0b1;
+
+			if (mc_state_msg_counter == 0) write_rx_to_sd();
+			mc_state_msg_counter++;
+			mc_state_msg_counter %= 100;
+
 			break;
 		case PEI_CURRENT_SHUTDOWN:
 			shutdown_flags = RxData[2];
+			write_rx_to_sd();
 			break;
 		case MC_FAULT_CODES:
+			if (mc_fault_msg_counter == 0) write_rx_to_sd();
+			mc_fault_msg_counter++;
+			mc_fault_msg_counter %= 100;
+
 			for (uint8_t i = 0; i < 8; i++) {
 				if (RxData[i] > 0) {
 					mc_fault = 1;
@@ -66,11 +93,21 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 					mc_fault = 0;
 				}
 			}
+			break;
 		case MC_PARAM_RESPONSE:
 			if (RxData[0] == 0x20 && RxData[2] == 1) {
 				mc_fault_clear_success = 1;
 			}
+
+			if (mc_param_msg_counter == 0) write_rx_to_sd();
+			mc_param_msg_counter++;
+			mc_param_msg_counter %= 100;
+
 			break;
+		case COOLING_TEMPS:
+			write_rx_to_sd();
+			break;
+
 //		case WHEEL_SPEED_REAR:
 //			back_right_wheel_speed = (RxData[0] << 8) ;
 //			back_right_wheel_speed += RxData[1];
@@ -81,10 +118,21 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			back_right_wheel_speed = (RxData[3] << 8) ;
 			back_right_wheel_speed += RxData[2];
 			back_right_wheel_speed *= -1;
+
+			if (mc_motor_pos_msg_counter == 0) write_rx_to_sd();
+			mc_motor_pos_msg_counter++;
+			mc_motor_pos_msg_counter %= 25;
+
 			break;
 		case MC_TEMP_3:
 			motor_temp = RxData[5] << 8;
 			motor_temp += RxData[4];
+
+			if (mc_temp_msg_counter == 0) write_rx_to_sd();
+			mc_temp_msg_counter++;
+			mc_temp_msg_counter %= 100;
+
+			break;
 		default:
 			// no valid input received
 			break;
@@ -119,7 +167,10 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	{
 	  print("CAN Tx failed\r\n");
 	}
-    write_tx_to_sd(TxHeader, data_tx_state);
+
+    if (vcu_state_msg_counter == 0) write_tx_to_sd(TxHeader, data_tx_state);
+    vcu_state_msg_counter++;
+    vcu_state_msg_counter %= 2;
 }
 
 
@@ -170,7 +221,10 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 	{
 	  print("CAN Tx failed\r\n");
 	}
-    write_tx_to_sd(TxHeader, data_tx_torque);
+
+    if (torque_request_msg_counter == 0) write_tx_to_sd(TxHeader, data_tx_torque);
+    torque_request_msg_counter++;
+    torque_request_msg_counter %= 2;
 }
 
 
@@ -186,7 +240,6 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
-	write_tx_to_sd(TxHeader, data_tx_torque);
 }
 
 void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
@@ -211,7 +264,6 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 	{
 	  print("CAN Tx failed\r\n");
 	}
-	write_tx_to_sd(TxHeader, data_tx_param_command);
 }
 
 

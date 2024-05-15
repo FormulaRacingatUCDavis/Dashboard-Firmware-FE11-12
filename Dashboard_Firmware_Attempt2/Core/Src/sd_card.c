@@ -30,7 +30,7 @@ int mount_sd_card(void) {
 
   	 char filename[20];
 
-  	 // name the file, increment until filename that hasnt been taken
+  	 // name the file, increment until filename has'nt been taken
   	 uint8_t num = 0;
   	 while (1) {
   		  FIL F1;
@@ -79,15 +79,14 @@ void write_tx_to_sd(CAN_TxHeaderTypeDef TxHeader, uint8_t TxData[]){
 
 void sd_card_write(void){
 	static uint32_t last_write_index = 0;
-	FRESULT res;
 
 	if(ind == last_write_index){
 		return;
 	} else if(ind > last_write_index){
-		res = f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &byteswritten);
+		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &byteswritten);
 	} else { // index < last_write_index
-		res = f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &byteswritten);
-		res = f_write(&SDFile, buffer, ind, &byteswritten);
+		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &byteswritten);
+		f_write(&SDFile, buffer, ind, &byteswritten);
 	}
 
 	f_sync(&SDFile); // sync less often?
