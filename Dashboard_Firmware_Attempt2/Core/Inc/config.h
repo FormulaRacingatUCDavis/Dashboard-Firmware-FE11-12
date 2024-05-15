@@ -33,6 +33,6 @@
 #define RTD_BRAKE_THRESHOLD 500  //brake threshold to enter drive mode
 #define BRAKE_BSPD_THRESHOLD 100
 
-#define MAX_TORQUE 2300  //230 Nm
+#define MAX_TORQUE_NM 230  //230 Nm
 
 #endif

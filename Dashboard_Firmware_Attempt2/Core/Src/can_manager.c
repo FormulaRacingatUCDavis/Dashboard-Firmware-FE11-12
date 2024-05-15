@@ -19,6 +19,7 @@ volatile uint16_t motor_temp;
 volatile uint16_t mc_temp;
 volatile int16_t glv_v;
 
+volatile int16_t motor_speed = 0;
 volatile uint16_t rear_right_wheel_speed = 0;
 volatile uint16_t rear_left_wheel_speed = 0;
 volatile uint8_t wheel_updated[2] = {1,0};
@@ -87,6 +88,11 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 //			telem_id = 0;
 //			break;
 		case MC_MOTOR_POSITION:
+			motor_speed = (RxData[3] << 8);
+			motor_speed |= RxData[2];
+			motor_speed *= -1;
+
+			// TEMPORARY?
 			rear_right_wheel_speed = (RxData[3] << 8);
 			rear_right_wheel_speed += RxData[2];
 			rear_right_wheel_speed *= -1;
@@ -185,30 +191,20 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 	TxHeader.RTR = CAN_RTR_DATA;
 	TxHeader.DLC = 8;
 
+    uint8_t byte5 = 0b010;   //speed mode | discharge_enable | inverter enable
+    if(hv_requested() && state != PRECHARGING){
+    	byte5 |= 0x01;  //set inverter enable bit
+    }
+
     uint16_t throttle_msg_byte = 0;
     if (state == DRIVE) {
-    	uint16_t throttle_req = requested_throttle();
-
-    	// deadzoning
-    	if (throttle_req  < 50) {
-    		throttle_req = 0;
-    	}
-
-    	// adjust throttle with traction control
-        throttle_msg_byte = throttle_req - TC_torque_adjustment;
+    	uint16_t throttle_msg_byte = requested_throttle();
 
         // zero throttle if brake is pressed at all, prevents hardware bspd
         if (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD)) {
         	throttle_msg_byte = 0;
         }
     }
-
-    uint8_t byte5 = 0b010;   //speed mode | discharge_enable | inverter enable
-
-    if (state == DRIVE) {
-    	byte5 |= (hv_requested() & 0x01);  //set inverter enable bit
-    }
-
 
     uint8_t data_tx_torque[8] = {
         (uint8_t)(throttle_msg_byte & 0xff), // 0 - torque command lower (Nm*10)

@@ -8,12 +8,21 @@
 #include "can_manager.h"
 #include "frucd_display.h"
 #include <stdlib.h>
+#include "traction_control.h"
 
 CALIBRATED_SENSOR_t throttle1;
 CALIBRATED_SENSOR_t throttle2;
 CALIBRATED_SENSOR_t brake;
 uint32_t torque_percentage = 100;
 
+#define MAX_POWER_W 78000   // rules is 80, leave some gap
+#define RADS_PER_RPM 0.10472
+#define TORQUE_LIMIT_RPM ((MAX_POWER_W/MAX_TORQUE_NM) / RADS_PER_RPM)  // RPM at which power can exceed MAX_POWER_W
+
+extern volatile uint8_t traction_control_enabled;
+extern volatile int16_t motor_speed;
+
+uint16_t get_max_torque();
 //extern void Error_Handler();
 
 /************ Timer ************/
@@ -157,10 +166,16 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
 
 uint16_t requested_throttle(){
     temp_attenuate();
+    int32_t percent = (int32_t)throttle2.percent;
 
+    if(traction_control_enabled){
+    	percent -= TC_torque_adjustment;
+    }
 
-    uint32_t throttle = ((uint32_t)throttle2.percent * MAX_TORQUE) / 100;  //upscale for MC code
+    percent = clamp(percent, 0, 100);
+    uint32_t max_torque = get_max_torque();
 
+    uint32_t throttle = (percent * max_torque * 10) / 100;  //upscale for MC code, Nm times 10
     throttle = (throttle * THROTTLE_MULTIPLIER) / 100;       //attenuate for temperature
     throttle = throttle * torque_percentage / 100;
 
@@ -169,7 +184,18 @@ uint16_t requested_throttle(){
     } else {						//case 2: if we don't know if it's being pressed or just car shaking
     	return (uint16_t)throttle / 2;	//return on 1:1/2 scale
     }
-	return 1;
+	return 0;
+}
+
+uint16_t get_max_torque(){
+	if(motor_speed < TORQUE_LIMIT_RPM){
+		return MAX_TORQUE_NM;
+	}
+
+	float motor_speed_rads = (float)motor_speed * RADS_PER_RPM;
+	float max_torque = MAX_POWER_W / motor_speed_rads;
+
+	return (uint16_t)max_torque;
 }
 
 void temp_attenuate() {
