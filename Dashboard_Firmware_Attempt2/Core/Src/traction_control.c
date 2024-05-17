@@ -31,7 +31,7 @@ void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
 
     // units are in RPM/CPS
     float avg_front_wheel_speed = ((float)(fr_wheel_speed + fl_wheel_speed))/2.0;
-    float avg_rear_wheel_speed = 5;//((float)rear_right_wheel_speed)*12.0/33.0; // (back_right_wheel_speed + back_left_wheel_speed)/2.0;
+    float avg_rear_wheel_speed = ((float)rear_right_wheel_speed)*12.0/33.0; // (back_right_wheel_speed + back_left_wheel_speed)/2.0;
 
     if(avg_front_wheel_speed == 0) avg_front_wheel_speed = 1; // prevent divide by 0
     current_slip_ratio = avg_rear_wheel_speed/avg_front_wheel_speed - 1;

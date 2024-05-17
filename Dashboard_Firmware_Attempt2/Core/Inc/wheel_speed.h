@@ -21,10 +21,21 @@ typedef struct
 	uint32_t last_count;
 } WheelSpeed_t;
 
+typedef struct
+{
+	TIM_HandleTypeDef* h_tim;
+	uint32_t tim_channel;
+	uint32_t buf[1];
+	uint32_t hclk;
+} WheelSpeedPW_t;
+
 extern volatile uint32_t front_right_wheel_speed;
 extern volatile uint32_t front_left_wheel_speed;
 
 void WheelSpeed_Init(WheelSpeed_t* ws, TIM_HandleTypeDef* h_tim);
 uint32_t WheelSpeed_GetCPS(WheelSpeed_t* ws);
+
+void WheelSpeedPW_Init(WheelSpeedPW_t* ws, TIM_HandleTypeDef* h_tim, uint32_t tim_channel);
+uint32_t WheelSpeedPW_GetCPS(WheelSpeedPW_t* ws);
 
 #endif /* INC_WHEEL_SPEED_H_ */
