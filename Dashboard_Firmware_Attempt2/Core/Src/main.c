@@ -225,7 +225,13 @@ int main(void)
   while (1)
   {
 	  // display
-	  Display_Update();
+	  if (display_debug_enabled) {
+		  Debug_Display_Update();
+	  }
+	  else {
+		 Display_Update();
+	  }
+
 	  debug_enabled_update();
 
 	  // telem

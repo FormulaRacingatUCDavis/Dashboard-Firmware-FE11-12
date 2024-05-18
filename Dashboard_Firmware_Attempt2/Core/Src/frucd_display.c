@@ -48,7 +48,12 @@ TEXTBOX_CONFIG state_box;
 
 TEXTBOX_CONFIG shutdown_box;
 
-TEXTBOX_CONFIG mc_temp_box;
+TEXTBOX_CONFIG mc_temp_box = {
+		.grn_ylw_cutoff = 30,
+		.ylw_org_cutoff = 40,
+		.org_red_cutoff = 50,
+		.units = 'C'
+};
 
 TEXTBOX_CONFIG motor_temp_box;
 
@@ -136,6 +141,9 @@ void Display_DebugTemplate()
     shutdown_box.box_y1 = 80;
     shutdown_box.box_x2 = 450;
     shutdown_box.box_y2 = 110;
+    shutdown_box.font = FONT_12X16;
+    shutdown_box.last_color = C_BLACK;  // force box redraw
+    shutdown_box.last_value = 255;
 
     //updated
     bms_temp_box.box_x1 = 30;
@@ -163,7 +171,6 @@ void Display_DebugTemplate()
 	state_box.last_value = 255;
 
 
-
 	//motor control temp updated
 	mc_temp_box.box_x1 = 30;
 	mc_temp_box.box_y1 = 20;
@@ -189,9 +196,6 @@ void Display_DebugTemplate()
 	mc_fault_state_box.font = FONT_12X16;
 	mc_fault_state_box.last_color = C_BLACK;  // force box redraw
 	mc_fault_state_box.last_value = 255;
-
-
-
 
 
 //	glv_v_box.box_x1 = 10;

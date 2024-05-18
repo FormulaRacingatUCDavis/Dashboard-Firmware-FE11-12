@@ -31,6 +31,7 @@ void Display_CalibrateScreen();
 void Display_DebugTemplate();
 void Display_DriveTemplate();
 void Display_Update();
+void Debug_Display_Update();
 
 /* [] END OF FILE */
 
