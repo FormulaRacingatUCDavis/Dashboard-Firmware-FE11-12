@@ -33,6 +33,7 @@
 #include "wheel_speed.h"
 #include "telem.h"
 #include "xsens.h"
+#include "driver_input.h"
 
 
 /* USER CODE END Includes */
@@ -106,28 +107,6 @@ static void MX_TIM7_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-
-/************ Switches ************/
-
-volatile uint8_t traction_control_enabled = 0;
-uint8_t traction_control_pressed() {
-	return !HAL_GPIO_ReadPin(GPIOG, BUTTON_1_Pin);
-}
-
-volatile uint8_t display_debug_enabled = 0;
-uint8_t debug_btn_pressed() {
-	return !HAL_GPIO_ReadPin(GPIOG, BUTTON_2_Pin);
-}
-
-uint8_t hv_switch() {
-	return !HAL_GPIO_ReadPin(GPIOG, HV_REQUEST_Pin);
-}
-
-uint8_t drive_switch() {
-	return !HAL_GPIO_ReadPin(GPIOG, DRIVE_REQUEST_Pin);
-}
-
 
 uint8_t shutdown_closed() {
     if (estop_flags) return 0;
@@ -244,18 +223,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
+	  // display
 	  Display_Update();
-
-	  if (display_debug_enabled && debug_btn_pressed()) {
-		 Display_DriveTemplate();
-		 display_debug_enabled = 0;
-	  }
-	  else if (debug_btn_pressed()) {
-		  Display_DebugTemplate();
-		  display_debug_enabled = 1;
-	  }
-
+	  debug_enabled_update();
 
 	  // telem
 	  telem_send();
@@ -280,19 +250,8 @@ int main(void)
 	  sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u   ", front_right_wheel_speed, front_left_wheel_speed, rear_right_wheel_speed, sg_adc);
 	  UG_PutString(5, 250, sstr);
 
-	  // traction control toggle
-	  if (traction_control_enabled && traction_control_pressed()) {
-		  traction_control_enabled = 0;
-		  sprintf(sstr, "TC OFF");
-		  UG_PutString(400, 250, sstr);
-	  }
-	  else if (traction_control_pressed()) {
-		  traction_control_enabled = 1;
-		  sprintf(sstr, "TC ON  ");
-		  UG_PutString(400, 250, sstr);
-	  }
-
-	  // run traction control
+	  // traction control
+	  traction_control_enabled_update();
 	  if (traction_control_enabled) {
 		  traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	  }
