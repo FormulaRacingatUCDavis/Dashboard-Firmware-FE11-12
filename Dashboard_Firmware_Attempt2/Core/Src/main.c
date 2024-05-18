@@ -69,6 +69,7 @@ DMA_HandleTypeDef hdma_sdmmc1_tx;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim7;
+DMA_HandleTypeDef hdma_tim2_ch1;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
@@ -139,7 +140,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 volatile uint32_t front_right_wheel_speed;
 volatile uint32_t front_left_wheel_speed;
 
-WheelSpeed_t front_right_wheel_speed_t;
+WheelSpeedPW_t front_right_wheel_speed_t;
 WheelSpeed_t front_left_wheel_speed_t;
 
 // TEST END
@@ -212,7 +213,7 @@ int main(void)
 	  Error_Handler();
   }
 
-  WheelSpeed_Init(&front_right_wheel_speed_t, &htim2);
+  WheelSpeedPW_Init(&front_right_wheel_speed_t, &htim2, TIM_CHANNEL_1);
   WheelSpeed_Init(&front_left_wheel_speed_t, &htim4);
 
 //  mount_sd_card();
@@ -242,7 +243,7 @@ int main(void)
 	  can_tx_torque_request(&hcan1);
 
 	  // update front wheel speeds
-	  front_right_wheel_speed = WheelSpeed_GetCPS(&front_right_wheel_speed_t);
+	  front_right_wheel_speed = WheelSpeedPW_GetCPS(&front_right_wheel_speed_t);
 	  front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
 	  uint16_t sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
 	  can_tx_sg(&hcan1, sg_adc);
@@ -740,14 +741,16 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_SlaveConfigTypeDef sSlaveConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 1000;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -756,10 +759,18 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_EXTERNAL1;
-  sSlaveConfig.InputTrigger = TIM_TS_ETRF;
-  sSlaveConfig.TriggerPolarity = TIM_TRIGGERPOLARITY_NONINVERTED;
-  sSlaveConfig.TriggerPrescaler = TIM_TRIGGERPRESCALER_DIV1;
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
+  sSlaveConfig.InputTrigger = TIM_TS_TI1FP1;
+  sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
   sSlaveConfig.TriggerFilter = 0;
   if (HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig) != HAL_OK)
   {
@@ -768,6 +779,14 @@ static void MX_TIM2_Init(void)
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -984,6 +1003,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
