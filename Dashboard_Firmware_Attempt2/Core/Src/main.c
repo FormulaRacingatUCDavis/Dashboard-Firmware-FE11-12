@@ -1033,8 +1033,8 @@ void MainEntry(void *argument)
 		traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	}
 
-	sprintf(sstr, "ctrl: %d, slip rat: %.2f", TC_torque_req, current_slip_ratio);
-	UG_PutString(5, 1, sstr);
+//	sprintf(sstr, "ctrl: %d, slip rat: %.2f", TC_torque_req, current_slip_ratio);
+//	UG_PutString(5, 1, sstr);
 
 	// If shutdown circuit opens in any state
 	if (!shutdown_closed()) {
@@ -1209,10 +1209,10 @@ void MainEntry(void *argument)
 
 	HAL_GPIO_TogglePin(HEARTBEAT_GPIO_Port, HEARTBEAT_Pin);
 	osDelay(10);
-
-	// In case we accidentally leave the infinite loop
-	osThreadTerminate(osThreadGetId());
   }
+
+  // In case we accidentally leave the infinite loop
+  osThreadTerminate(osThreadGetId());
   /* USER CODE END 5 */
 }
 
