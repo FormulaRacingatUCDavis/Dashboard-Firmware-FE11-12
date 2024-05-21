@@ -20,7 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -74,6 +73,7 @@ extern DMA_HandleTypeDef hdma_uart4_rx;
   */
 void HAL_MspInit(void)
 {
+
   /* USER CODE BEGIN MspInit 0 */
 
   /* USER CODE END MspInit 0 */
@@ -82,6 +82,8 @@ void HAL_MspInit(void)
   __HAL_RCC_SYSCFG_CLK_ENABLE();
 
   /* System interrupt init*/
+  /* PendSV_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(PendSV_IRQn, 15, 0);
 
   /* USER CODE BEGIN MspInit 1 */
 
@@ -272,7 +274,7 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
@@ -398,12 +400,22 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     __HAL_RCC_GPIOD_CLK_ENABLE();
     /**SDMMC1 GPIO Configuration
     PC8     ------> SDMMC1_D0
+    PC9     ------> SDMMC1_D1
+    PC10     ------> SDMMC1_D2
+    PC11     ------> SDMMC1_D3
     PC12     ------> SDMMC1_CK
     PD2     ------> SDMMC1_CMD
     */
     GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -459,7 +471,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     __HAL_LINKDMA(hsd,hdmatx,hdma_sdmmc1_tx);
 
     /* SDMMC1 interrupt Init */
-    HAL_NVIC_SetPriority(SDMMC1_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(SDMMC1_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
   /* USER CODE BEGIN SDMMC1_MspInit 1 */
 
@@ -486,10 +498,14 @@ void HAL_SD_MspDeInit(SD_HandleTypeDef* hsd)
 
     /**SDMMC1 GPIO Configuration
     PC8     ------> SDMMC1_D0
+    PC9     ------> SDMMC1_D1
+    PC10     ------> SDMMC1_D2
+    PC11     ------> SDMMC1_D3
     PC12     ------> SDMMC1_CK
     PD2     ------> SDMMC1_CMD
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_8|GPIO_PIN_12);
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11
+                          |GPIO_PIN_12);
 
     HAL_GPIO_DeInit(GPIOD, GPIO_PIN_2);
 
@@ -577,7 +593,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
     /* TIM4 interrupt Init */
-    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(TIM4_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(TIM4_IRQn);
   /* USER CODE BEGIN TIM4_MspInit 1 */
 
@@ -591,7 +607,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     /* Peripheral clock enable */
     __HAL_RCC_TIM7_CLK_ENABLE();
     /* TIM7 interrupt Init */
-    HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(TIM7_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(TIM7_IRQn);
   /* USER CODE BEGIN TIM7_MspInit 1 */
 
