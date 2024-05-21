@@ -5,6 +5,7 @@
 #include "config.h"
 
 #define MIN_FRONT_SPEED 50  // slip ratio calculation doesn't work for zero
+#define MAX_TORQUE_REQUEST (MAX_TORQUE_NM * 10)  // torque requests are in Nm * 10
 
 volatile float TC_control_var = 0;
 volatile uint16_t TC_torque_req = 0; // torque request in Nm for best consistency
@@ -60,10 +61,10 @@ void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
     TC_control_var = (kP * pid_error) + (kI * integral) + (kD * derivative);
 
     // limit PID torque request
-    if (TC_control_var > MAX_TORQUE_NM) TC_control_var = MAX_TORQUE_NM;
+    if (TC_control_var > MAX_TORQUE_REQUEST) TC_control_var = MAX_TORQUE_REQUEST;
     if (TC_control_var < 0) TC_control_var = 0;
 
-    TC_torque_req = MAX_TORQUE_NM - (uint16_t)TC_control_var;
+    TC_torque_req = MAX_TORQUE_REQUEST - (uint16_t)TC_control_var;
 
     prev_pid_error = pid_error;
 }
