@@ -51,7 +51,6 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			bms_status += RxData[3];
 			pack_voltage = (RxData[4] << 8);
 			pack_voltage += RxData[5];
-			temp_attenuate();
 			break;
 		case MC_VOLTAGE_INFO:
 			capacitor_volt = (RxData[0] << 8); // upper bits
@@ -188,8 +187,8 @@ void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc){
 		front_right_wheel_speed & 0xff,
 //		front_left_wheel_speed >> 8,
 //		front_left_wheel_speed & 0xff,
-		TC_torque_adjustment  >> 8,
-		TC_torque_adjustment & 0xff,
+		TC_torque_req  >> 8,
+		TC_torque_req & 0xff,
     };
 
     if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_state, &TxMailbox) != HAL_OK)

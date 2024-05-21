@@ -13,7 +13,7 @@
 #define SRC_TRACTION_CONTROL_H_
 
 extern volatile float TC_control_var;
-extern volatile uint16_t TC_torque_adjustment;
+extern volatile uint16_t TC_torque_req;
 extern volatile float current_slip_ratio;
 
 extern volatile float pid_error;

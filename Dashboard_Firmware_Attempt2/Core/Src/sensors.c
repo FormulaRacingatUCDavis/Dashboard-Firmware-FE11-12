@@ -16,17 +16,16 @@ CALIBRATED_SENSOR_t brake;
 uint32_t torque_percentage = 100;
 
 #define RADS_PER_RPM 0.10472
-#define TORQUE_LIMIT_RPM ((MAX_POWER_W/MAX_TORQUE_NM) / RADS_PER_RPM)  // RPM at which power can exceed MAX_POWER_W
 
 extern volatile uint8_t traction_control_enabled;
 extern volatile int16_t motor_speed;
 
-uint16_t get_max_torque();
+uint16_t get_max_torque(uint32_t max_power);
+uint16_t get_max_power();
 //extern void Error_Handler();
 
 /************ Timer ************/
 unsigned int discrepancy_timer_ms = 0;
-
 
 void init_sensors(){
     throttle1.min = 0x7FFF;
@@ -39,10 +38,6 @@ void init_sensors(){
     brake.max = 0;
     brake.range = 1;
 }
-
-// APPS
-uint8_t THROTTLE_MULTIPLIER = 100;
-const uint8_t THROTTLE_MAP[8] = { 95, 71, 59, 47, 35, 23, 11, 5 };
 
 void select_adc_channel(ADC_HandleTypeDef *hadc, ADC_CHAN channel)
 {
@@ -164,50 +159,42 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
 }
 
 uint16_t requested_throttle(){
-    temp_attenuate();
-    int32_t percent = (int32_t)throttle2.percent;
+    uint16_t max_power = get_max_power();
+    uint16_t max_torque = get_max_torque(max_power);
 
-    if(traction_control_enabled){
-    	if(percent > TC_torque_adjustment){
-    		//percent = TC_torque_adjustment;
-    	}
-    }
+    uint32_t torque_req = (throttle2.percent * max_torque * 10) / 100;  //upscale for MC code, Nm times 10
 
-    percent = clamp(percent, 0, 100);
-    uint32_t max_torque = get_max_torque();
-
-    uint32_t throttle = (percent * max_torque * 10) / 100;  //upscale for MC code, Nm times 10
-    throttle = (throttle * THROTTLE_MULTIPLIER) / 100;       //attenuate for temperature
-    throttle = throttle * torque_percentage / 100;
-
-    if (throttle >= 5.0) {			//case 1: if the pedal is actually being pressed return on a 1:1 scale
-    	return (uint16_t)throttle;
-    } else {						//case 2: if we don't know if it's being pressed or just car shaking
-    	return (uint16_t)throttle / 2;	//return on 1:1/2 scale
-    }
-	return 0;
-}
-
-uint16_t get_max_torque(){
-	if(motor_speed < TORQUE_LIMIT_RPM){
-		return MAX_TORQUE_NM;
+    // use reduced values from TC if TC torque request is lower
+    if(traction_control_enabled && (torque_req > TC_torque_req)){
+		torque_req = TC_torque_req;
 	}
 
-	float motor_speed_rads = (float)motor_speed * RADS_PER_RPM;
-	float max_torque = MAX_POWER_W / motor_speed_rads;
-
-	return (uint16_t)max_torque;
+    return (uint16_t)torque_req;
 }
 
-void temp_attenuate() {
-    int t = PACK_TEMP - 50;
-    if (t < 0) {
-        THROTTLE_MULTIPLIER = 100;
-    } else if (t < 8) {
-        THROTTLE_MULTIPLIER = THROTTLE_MAP[t];
-    } else if (t >= 8) {
-        THROTTLE_MULTIPLIER = THROTTLE_MAP[7];
-    }
+// get maximum power based on power limit
+// attenuate for BMS temps between 50 and 60
+uint16_t get_max_power(){
+	if(PACK_TEMP < 50) {
+		return MAX_POWER_W;
+	} else if(PACK_TEMP < 58) {
+		return (58 - PACK_TEMP)*(MAX_POWER_W / 8);
+	} else {
+		return 0;
+	}
+}
+
+uint16_t get_max_torque(uint32_t max_power){
+	float motor_speed_rads = (float)motor_speed * RADS_PER_RPM;
+	float max_torque_power = max_power / motor_speed_rads;
+	float max_torque_knob = (float)(MAX_TORQUE_NM * torque_percentage / 100);
+
+	// return the lower of the torque limit set by the knob and by the power limit
+	if(max_torque_knob > max_torque_power){
+		return (uint16_t)max_torque_power;
+	} else {
+		return (uint16_t)max_torque_knob;
+	}
 }
 
 bool sensors_calibrated(){

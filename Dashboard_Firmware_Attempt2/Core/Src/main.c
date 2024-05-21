@@ -263,7 +263,7 @@ int main(void)
 		  traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	  }
 
-	  sprintf(sstr, "ctrl: %d, slip rat: %.2f", TC_torque_adjustment, current_slip_ratio);
+	  sprintf(sstr, "ctrl: %d, slip rat: %.2f", TC_torque_req, current_slip_ratio);
 	  UG_PutString(5, 1, sstr);
 
 	  // If shutdown circuit opens in any state

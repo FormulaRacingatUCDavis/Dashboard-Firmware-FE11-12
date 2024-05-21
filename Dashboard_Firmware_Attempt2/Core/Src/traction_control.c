@@ -2,9 +2,12 @@
 #include "frucd_display.h"
 #include "can_manager.h"
 #include "stdio.h"
+#include "config.h"
+
+#define MIN_FRONT_SPEED 50  // slip ratio calculation doesn't work for zero
 
 volatile float TC_control_var = 0;
-volatile uint16_t TC_torque_adjustment = 0;
+volatile uint16_t TC_torque_req = 0; // torque request in Nm for best consistency
 
 volatile float pid_error = 0;
 volatile float prev_pid_error = 0;
@@ -24,8 +27,6 @@ const float kP = 16;
 const float kI = 1.6;
 const float kD = 0; // probably don't need this term
 
-const float TC_torque_limit = 100;
-
 void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
     //if (state != DRIVE) return;
 
@@ -33,8 +34,8 @@ void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
     float avg_front_wheel_speed = ((float)(fr_wheel_speed));// + fl_wheel_speed))/2.0;
     float avg_rear_wheel_speed = ((float)rear_right_wheel_speed)*12.0/33.0; // (back_right_wheel_speed + back_left_wheel_speed)/2.0;
 
-    if(avg_front_wheel_speed < 300){
-    	current_slip_ratio = (avg_rear_wheel_speed - avg_front_wheel_speed) * (target_slip_ratio / 60);
+    if(avg_front_wheel_speed < MIN_FRONT_SPEED){
+    	avg_front_wheel_speed = MIN_FRONT_SPEED;
     } else {
     	current_slip_ratio = avg_rear_wheel_speed/avg_front_wheel_speed - 1;
     }
@@ -59,10 +60,10 @@ void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
     TC_control_var = (kP * pid_error) + (kI * integral) + (kD * derivative);
 
     // limit PID torque request
-    if (TC_control_var > TC_torque_limit) TC_control_var = TC_torque_limit;
+    if (TC_control_var > MAX_TORQUE_NM) TC_control_var = MAX_TORQUE_NM;
     if (TC_control_var < 0) TC_control_var = 0;
 
-    TC_torque_adjustment = 100 - (uint16_t)TC_control_var; // this will be subtracted from the actual torque request
+    TC_torque_req = MAX_TORQUE_NM - (uint16_t)TC_control_var;
 
     prev_pid_error = pid_error;
 }
