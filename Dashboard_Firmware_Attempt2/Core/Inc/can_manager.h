@@ -71,5 +71,8 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan);
 void can_clear_MC_fault(CAN_HandleTypeDef *hcan);
 void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc);
 
+// might want to have all the tx functions use this more generic function
+HAL_StatusTypeDef CAN_Send(CAN_HandleTypeDef *hcan, uint32_t id, uint8_t* data, uint8_t len);
+
 #endif /* SRC_CAN_MANAGER_H_ */
 

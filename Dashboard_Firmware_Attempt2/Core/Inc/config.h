@@ -34,5 +34,6 @@
 #define BRAKE_BSPD_THRESHOLD 100
 
 #define MAX_TORQUE_NM 230  //230 Nm
+#define MAX_POWER_W 78000   // rules is 80, leave some gap
 
 #endif

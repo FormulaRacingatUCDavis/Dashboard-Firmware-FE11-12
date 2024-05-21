@@ -74,6 +74,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 					mc_fault = 0;
 				}
 			}
+			break;
 		case MC_PARAM_RESPONSE:
 			if (RxData[0] == 0x20 && RxData[2] == 1) {
 				mc_fault_clear_success = 1;
@@ -109,9 +110,11 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			outlet_pres = (RxData[6] << 8);
 			outlet_pres += RxData[7];
 			telem_id = 1;
+			break;
 		case MC_TEMP_3:
 			motor_temp = RxData[5] << 8;
 			motor_temp += RxData[4];
+			break;
 		case MC_TEMP_1:
 			uint16_t module_a_temp = (RxData[1] << 8) + RxData[0];
 			uint16_t module_b_temp = (RxData[3] << 8) + RxData[2];
@@ -121,6 +124,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 		case MC_INTERNAL_VOLTS:
 			glv_v = RxData[7] << 8;
 			glv_v += RxData[6]; // no unit conversion, don't want to store float
+			break;
 		default:
 			// no valid input received
 			break;
@@ -157,6 +161,18 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	  print("CAN Tx failed\r\n");
 	}
 //    write_tx_to_sd(TxHeader, data_tx_state);
+}
+
+HAL_StatusTypeDef CAN_Send(CAN_HandleTypeDef *hcan, uint32_t id, uint8_t* data, uint8_t len)
+{
+	static CAN_TxHeaderTypeDef msg_hdr;
+	msg_hdr.IDE = CAN_ID_STD;
+	msg_hdr.StdId = id;
+	msg_hdr.RTR = CAN_RTR_DATA;
+	msg_hdr.DLC = len;
+
+	if(HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) return HAL_OK;
+	return HAL_CAN_AddTxMessage(hcan, &msg_hdr, data, &TxMailbox);
 }
 
 //  transmit state
@@ -198,7 +214,7 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 
     uint16_t throttle_msg_byte = 0;
     if (state == DRIVE) {
-    	uint16_t throttle_msg_byte = requested_throttle();
+    	throttle_msg_byte = requested_throttle();
 
         // zero throttle if brake is pressed at all, prevents hardware bspd
         if (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD)) {

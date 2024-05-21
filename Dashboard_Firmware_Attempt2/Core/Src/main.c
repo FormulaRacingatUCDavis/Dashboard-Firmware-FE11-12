@@ -288,7 +288,7 @@ int main(void)
 		//  }
 	  }
 
-	  //Xsens_Update(&huart4);
+	  Xsens_Update(&huart4);
 
 	  switch (state) {
 		  case STARTUP:

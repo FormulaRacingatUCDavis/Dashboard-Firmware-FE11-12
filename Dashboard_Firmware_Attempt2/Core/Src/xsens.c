@@ -10,10 +10,16 @@
 #include "xsens/xsens_mti.h"      // Main xsens library
 #include "xsens/xsens_utility.h"  // Needed for quaternion conversion function
 #include "fatfs.h"
+#include "can_manager.h"
 
 #include <stdbool.h>
 
+extern CAN_HandleTypeDef hcan1;
+
 #define BUFLEN 200
+
+#define HI8(x) ((x>>8)&0xFF)
+#define LO8(x) (x&0xFF);
 
 // PRIVATE FUNCTION PROTOTYPES
 void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata);
@@ -66,34 +72,59 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
     //     float    f4x9[9];
     // } data;
 
-	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
 
     switch( event )
     {
         case XSENS_EVT_DELTA_V:
           if( mtdata->type == XSENS_EVT_TYPE_FLOAT3 )
             {
-                //writeLine(0x999, 3, mtdata->data.f4x3);
+
             }
             break;
 
         case XSENS_EVT_EULER:
           if( mtdata->type == XSENS_EVT_TYPE_FLOAT3 )
             {
-        	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
-                //writeLine(0xAAA, 3, mtdata->data.f4x3);
+        	  //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+			int16_t ang_x = (int16_t)mtdata->data.f4x3[0];
+			int16_t ang_y = (int16_t)mtdata->data.f4x3[1];
+			int16_t ang_z = (int16_t)mtdata->data.f4x3[2];
+
+			uint8_t data[6];
+			data[0] = HI8(ang_x);
+			data[1] = LO8(ang_x);
+			data[2] = HI8(ang_y);
+			data[3] = LO8(ang_y);
+			data[4] = HI8(ang_z);
+			data[5] = LO8(ang_z);
+
+			CAN_Send(&hcan1, 0x900, data, 6);
             }
             break;
 
         case XSENS_EVT_FREE_ACCELERATION:
           if(mtdata->type == XSENS_EVT_TYPE_FLOAT3)
             {
-                //writeLine(0xBBB, 3, mtdata->data.f4x3);
+        	  //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+			int16_t acc_x = (int16_t)(mtdata->data.f4x3[0] * 100);
+			int16_t acc_y = (int16_t)(mtdata->data.f4x3[1] * 100);
+			int16_t acc_z = (int16_t)(mtdata->data.f4x3[2] * 100);
+
+			uint8_t data[6];
+			data[0] = HI8(acc_x);
+			data[1] = LO8(acc_x);
+			data[2] = HI8(acc_y);
+			data[3] = LO8(acc_y);
+			data[4] = HI8(acc_z);
+			data[5] = LO8(acc_z);
+
+			CAN_Send(&hcan1, 0x901, data, 6);
             }
             break;
 
         case XSENS_EVT_LAT_LON:
-        	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+        	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
         	break;
 
         default:
