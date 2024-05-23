@@ -38,10 +38,16 @@ void Xsens_Update(UART_HandleTypeDef* h_uart){
 		Serial_Init(&serial, h_uart, rx_buf, BUFLEN);
 		Serial_StartListening(&serial);
 		first_run = false;
+
+		// for some reason it doesn't seem to receive anything until I've sent a byte?
+		// kinda sus somebody should look into this one
+		uint8_t bytes[1] = {1};
+		Serial_SendBytes(&serial, bytes, 1, 10);
 	}
 
 	uint32_t b = Serial_BytesAvailable(&serial);
 	for(uint32_t i = 0; i < b; i++){
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
 	 xsens_mti_parse(&imu_interface, Serial_GetByte(&serial));
 	}
 }
@@ -99,7 +105,7 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 			data[4] = HI8(ang_z);
 			data[5] = LO8(ang_z);
 
-			CAN_Send(&hcan1, 0x900, data, 6);
+			CAN_Send(&hcan1, 0x100, data, 6);
             }
             break;
 
@@ -119,7 +125,7 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 			data[4] = HI8(acc_z);
 			data[5] = LO8(acc_z);
 
-			CAN_Send(&hcan1, 0x901, data, 6);
+			CAN_Send(&hcan1, 0x101, data, 6);
             }
             break;
 
