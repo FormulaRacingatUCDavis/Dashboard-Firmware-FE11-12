@@ -1,0 +1,2 @@
+../Core/Src/xsens.c:63:6:imu_callback	24	static
+../Core/Src/xsens.c:30:6:Xsens_Update	32	static

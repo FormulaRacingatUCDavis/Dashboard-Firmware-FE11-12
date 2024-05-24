@@ -11,6 +11,8 @@ uint32_t prev_time = 0;
 
 extern UART_HandleTypeDef huart7;
 
+extern uint16_t sg_adc;
+
 void telem_send(void) {
 	send_time = HAL_GetTick();
 	if (send_time - prev_time > TELEM_DELAY) {
@@ -29,6 +31,11 @@ void telem_send(void) {
 				p.data[2] = inlet_pres;
 				p.data[3] = outlet_pres;
 				break;
+			case 2:
+				p.data[0] = sg_adc >> 8;
+				p.data[1] = sg_adc & 0xff;
+				p.data[2] = 0;
+				p.data[3] = 0;
 			default:
 				return;
 		}

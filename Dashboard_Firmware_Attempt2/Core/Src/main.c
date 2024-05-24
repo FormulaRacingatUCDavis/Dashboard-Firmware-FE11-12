@@ -144,6 +144,8 @@ volatile uint32_t front_left_wheel_speed;
 WheelSpeedPW_t front_right_wheel_speed_t;
 WheelSpeed_t front_left_wheel_speed_t;
 
+uint16_t sg_adc;
+
 // TEST END
 
 /* USER CODE END 0 */
@@ -1021,7 +1023,10 @@ void MainEntry(void *argument)
 	// update front wheel speeds
 	front_right_wheel_speed = WheelSpeedPW_GetCPS(&front_right_wheel_speed_t);
 	front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
-	uint16_t sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
+
+	// strain gauge
+	sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
+	telem_id = 2;
 	can_tx_sg(&hcan1, sg_adc);
 
 	sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u   ", front_right_wheel_speed, front_left_wheel_speed, rear_right_wheel_speed, sg_adc);

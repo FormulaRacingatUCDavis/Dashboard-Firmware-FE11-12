@@ -1,0 +1,5 @@
+../Core/Src/sd_card.c:28:5:mount_sd_card	4184	static
+../Core/Src/sd_card.c:60:6:write_data_record	56	static
+../Core/Src/sd_card.c:73:6:write_rx_to_sd	0	static
+../Core/Src/sd_card.c:77:6:write_tx_to_sd	0	static
+../Core/Src/sd_card.c:81:6:sd_card_write	16	static

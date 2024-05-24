@@ -1,5 +1,5 @@
 #include "can_manager.h"
-
+#include "sd_card.h"
 #include "serial_print.h"
 #include "traction_control.h"
 
@@ -333,7 +333,7 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 	const uint16_t param_addr = 20;
 	uint8_t data_tx_param_command[8] = {
 			param_addr & 0xFF, // address lower (little endian)
-			param_addr << 8, // address upper
+			param_addr >> 8, // address upper
 			1, // r/w: 1 = write
 			0, // reserved
 			0, // data

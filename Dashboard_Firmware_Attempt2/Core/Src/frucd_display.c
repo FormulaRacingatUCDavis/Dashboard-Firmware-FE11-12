@@ -16,6 +16,9 @@
 #include "can_manager.h"
 #include "fsm.h"
 
+extern volatile uint32_t front_right_wheel_speed;
+extern volatile uint32_t front_left_wheel_speed;
+
 typedef struct {
     uint16_t box_x1;
     uint16_t box_y1;
@@ -37,6 +40,8 @@ TEXTBOX_CONFIG soc_box = {
 		.ylw_org_cutoff = 50,
 		.org_red_cutoff = 25,
 		.units = '%'};
+
+TEXTBOX_CONFIG speed_box;
 
 TEXTBOX_CONFIG bms_temp_box = {
 		.grn_ylw_cutoff = 30,
@@ -70,6 +75,7 @@ UG_GUI gui1963;
 
 
 /// PRIVATE FUNCTION PROTOTYPES ///
+void draw_speed(uint32_t fl_wheel_speed, uint32_t fr_wheel_speed);
 void draw_soc(uint16_t soc);
 void draw_bms_temp(uint16_t temp);
 void draw_state(uint8_t state, uint16_t bms_status);
@@ -223,25 +229,33 @@ void Display_DriveTemplate()
     UG_FillScreen(C_BLACK);
 
     // draw labels
-    UG_PutString(68, 10, "PACK SOC");
+    UG_PutString(68, 10, "SPEED");
     UG_PutString(297, 10, "MAX PACK T");
     UG_PutString(30, 180, "STATE:");
     UG_PutString(275, 180, "GLV V:");
 
     // setup textbox configs
-    soc_box.box_x1 = 30;
+    soc_box.box_x1 = 270;
     soc_box.box_y1 = 35;
-    soc_box.box_x2 = 210;
-    soc_box.box_y2 = 170;
-    soc_box.font = FONT_32X53;
+    soc_box.box_x2 = 450;
+    soc_box.box_y2 = 101;
+    soc_box.font = FONT_12X16;
     soc_box.last_color = C_BLACK;  // force box redraw
     soc_box.last_value = 255;
 
+    speed_box.box_x1 = 30;
+    speed_box.box_y1 = 35;
+    speed_box.box_x2 = 210;
+    speed_box.box_y2 = 170;
+    speed_box.font = FONT_32X53;
+    speed_box.last_color = C_BLACK;  // force box redraw
+    speed_box.last_value = 255;
+
     bms_temp_box.box_x1 = 270;
-	bms_temp_box.box_y1 = 35;
+	bms_temp_box.box_y1 = 104;
 	bms_temp_box.box_x2 = 450;
 	bms_temp_box.box_y2 = 170;
-	bms_temp_box.font = FONT_32X53;
+	bms_temp_box.font = FONT_12X16;
 	bms_temp_box.last_color = C_BLACK;  // force box redraw
 	bms_temp_box.last_value = 255;
 
@@ -266,6 +280,7 @@ void Display_Update()
 //	soc = soc+1 ;
 //	glv_v+=1;
 
+	draw_speed(front_left_wheel_speed, front_right_wheel_speed);
     draw_soc(soc);
     draw_bms_temp(PACK_TEMP);
     draw_state(one_byte_state(), bms_status);
@@ -283,6 +298,9 @@ void Debug_Display_Update() {
 	draw_shutdown(shutdown_flags);
 }
 
+void draw_speed(uint32_t fl_wheel_speed, uint32_t fr_wheel_speed) {
+	draw_value_textbox(&speed_box, (fl_wheel_speed+fr_wheel_speed)/2);
+}
 
 void draw_soc(uint16_t soc)
 {
