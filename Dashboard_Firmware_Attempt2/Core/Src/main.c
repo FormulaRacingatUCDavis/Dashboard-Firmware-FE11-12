@@ -1025,8 +1025,8 @@ void MainEntry(void *argument)
 	uint16_t sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
 	can_tx_sg(&hcan1, sg_adc);
 
-	sprintf(sstr, "sg: %u   ", sg_adc);
-	//UG_PutString(5, 250, sstr);
+	sprintf(sstr, "fsg: %u, rsg: %u", sg_adc, sg_rear);
+	UG_PutString(5, 250, sstr);
 
 	// traction control
 	traction_control_enabled_update();
