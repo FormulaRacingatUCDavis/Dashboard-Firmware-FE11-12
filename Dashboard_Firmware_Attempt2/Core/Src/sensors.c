@@ -14,6 +14,7 @@ CALIBRATED_SENSOR_t throttle1;
 CALIBRATED_SENSOR_t throttle2;
 CALIBRATED_SENSOR_t brake;
 uint32_t torque_percentage = 100;
+uint32_t torque_req = 0;
 
 #define RADS_PER_RPM 0.10472
 
@@ -21,7 +22,7 @@ extern volatile uint8_t traction_control_enabled;
 extern volatile int16_t motor_speed;
 
 uint16_t get_max_torque(uint32_t max_power);
-uint16_t get_max_power();
+uint32_t get_max_power();
 //extern void Error_Handler();
 
 /************ Timer ************/
@@ -159,22 +160,23 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
 }
 
 uint16_t requested_throttle(){
-    uint16_t max_power = get_max_power();
+    uint32_t max_power = get_max_power();
     uint16_t max_torque = get_max_torque(max_power);
 
-    uint32_t torque_req = (throttle2.percent * max_torque * 10) / 100;  //upscale for MC code, Nm times 10
+    torque_req = (throttle2.percent * max_torque * 10) / 100;  //upscale for MC code, Nm times 10
 
     // use reduced values from TC if TC torque request is lower
     if(traction_control_enabled && (torque_req > TC_torque_req)){
 		torque_req = TC_torque_req;
 	}
 
+
     return (uint16_t)torque_req;
 }
 
 // get maximum power based on power limit
 // attenuate for BMS temps between 50 and 60
-uint16_t get_max_power(){
+uint32_t get_max_power(){
 	if(PACK_TEMP < 50) {
 		return MAX_POWER_W;
 	} else if(PACK_TEMP < 58) {
