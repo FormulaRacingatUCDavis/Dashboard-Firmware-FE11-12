@@ -21,11 +21,11 @@ const float pi = 3.14;
 const float wheel_radius = 0.5; // PLACEHOLDER VALUE
 const uint16_t pulses_per_rev = 60; // from wheel speed sensor
 
-float target_slip_ratio = 0.1;
+float target_slip_ratio = 0.17;
 volatile float current_slip_ratio = 0;
 
-const float kP = 16;
-const float kI = 1.6;
+const float kP = 5000;
+const float kI = 100;
 const float kD = 0; // probably don't need this term
 
 void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
@@ -37,9 +37,9 @@ void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {
 
     if(avg_front_wheel_speed < MIN_FRONT_SPEED){
     	avg_front_wheel_speed = MIN_FRONT_SPEED;
-    } else {
-    	current_slip_ratio = avg_rear_wheel_speed/avg_front_wheel_speed - 1;
     }
+
+    current_slip_ratio = avg_rear_wheel_speed/avg_front_wheel_speed - 1;
 
 //    // calculate dynamic slip ratio
 //    target_slip_ratio = 0.1 - 0.01*(avg_back_wheel_speed/max_wheel_speed);

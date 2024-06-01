@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+  /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -98,6 +98,7 @@ const osThreadAttr_t SDCard_attributes = {
 // Keeps track of timer waiting for pre-charging
 volatile unsigned int precharge_timer_ms = 0;
 volatile uint8_t init_fault_cleared = 0;
+extern uint32_t torque_req;
 
 /* USER CODE END PV */
 
@@ -143,6 +144,8 @@ volatile uint32_t front_left_wheel_speed;
 
 WheelSpeedPW_t front_right_wheel_speed_t;
 WheelSpeed_t front_left_wheel_speed_t;
+
+uint16_t sg_adc;
 
 // TEST END
 
@@ -1021,10 +1024,13 @@ void MainEntry(void *argument)
 	// update front wheel speeds
 	front_right_wheel_speed = WheelSpeedPW_GetCPS(&front_right_wheel_speed_t);
 	front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
-	uint16_t sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
+
+	// strain gauge
+	sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
+//	telem_id = 2;
 	can_tx_sg(&hcan1, sg_adc);
 
-	sprintf(sstr, "f1: %ld, f2: %ld, b: %d, sg: %u   ", front_right_wheel_speed, front_left_wheel_speed, rear_right_wheel_speed, sg_adc);
+	sprintf(sstr, "fsg: %u, rsg: %u", sg_adc, sg_rear);
 	UG_PutString(5, 250, sstr);
 
 	// traction control
@@ -1033,8 +1039,8 @@ void MainEntry(void *argument)
 		traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	}
 
-//	sprintf(sstr, "ctrl: %d, slip rat: %.2f", TC_torque_req, current_slip_ratio);
-//	UG_PutString(5, 1, sstr);
+ 	sprintf(sstr, "trq: %lu, slip rat: %.2f", torque_req, current_slip_ratio);
+	UG_PutString(5, 1, sstr);
 
 	// If shutdown circuit opens in any state
 	if (!shutdown_closed()) {
@@ -1207,7 +1213,7 @@ void MainEntry(void *argument)
 		break;
 	  }
 
-	HAL_GPIO_TogglePin(HEARTBEAT_GPIO_Port, HEARTBEAT_Pin);
+	//HAL_GPIO_TogglePin(HEARTBEAT_GPIO_Port, HEARTBEAT_Pin);
 	osDelay(10);
   }
 

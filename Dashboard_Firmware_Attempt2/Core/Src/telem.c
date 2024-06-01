@@ -4,12 +4,15 @@
 #include "telem.h"
 #include "can_manager.h"
 #include "wheel_speed.h"
+#include "traction_control.h"
 
 const uint8_t packet_validation[2] = {0x00, 0xff};
 uint32_t send_time;
 uint32_t prev_time = 0;
 
 extern UART_HandleTypeDef huart7;
+
+extern uint16_t sg_adc;
 
 void telem_send(void) {
 	send_time = HAL_GetTick();
@@ -24,15 +27,20 @@ void telem_send(void) {
 				p.data[3] = rear_left_wheel_speed;
 				break;
 			case 1:
-				p.data[0] = inlet_temp;
+				p.data[0] = (current_slip_ratio*100);
 				p.data[1] = outlet_temp;
 				p.data[2] = inlet_pres;
 				p.data[3] = outlet_pres;
 				break;
+//			case 2:
+//				p.data[0] = sg_adc >> 8;
+//				p.data[1] = sg_adc & 0xff;
+//				p.data[2] = 0;
+//				p.data[3] = 0;
 			default:
 				return;
 		}
-		HAL_UART_Transmit(&huart7, (uint8_t*)&p, PACKET_LENGTH, 1000);
+		HAL_StatusTypeDef v = HAL_UART_Transmit(&huart7, (uint8_t*)&p, PACKET_LENGTH, 1000);
 		telem_id = !telem_id;
 		prev_time = send_time;
 	}
