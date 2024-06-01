@@ -1089,7 +1089,7 @@ void MainEntry(void *argument)
 				if (sensors_calibrated()) {
 					// Start charging the car to high voltage state
 					add_apps_deadzone();
-					change_state(PRECHARGING);
+					//change_state(PRECHARGING);
 			  } else {
 				  	report_fault(UNCALIBRATED);
 			  }
@@ -1126,13 +1126,12 @@ void MainEntry(void *argument)
 			if (drive_switch()) {
 				// Driver flipped on drive switch
 				// Need to press on pedal at the same time to go to drive
-
-		//				  if (brake_mashed()) {
-				change_state(DRIVE);
-		//				  } else {
-		//					  // Driver didn't press pedal
-		//					  report_fault(BRAKE_NOT_PRESSED);
-		//				  }
+				if (brake_mashed()) {
+					change_state(DRIVE);
+				} else {
+					// Driver didn't press pedal
+					report_fault(BRAKE_NOT_PRESSED);
+				}
 			}
 
 			break;

@@ -284,11 +284,6 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
     uint16_t throttle_msg_byte = 0;
     if (state == DRIVE) {
     	throttle_msg_byte = requested_throttle();
-
-        // zero throttle if brake is pressed at all, prevents hardware bspd
-        if (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD)) {
-        	throttle_msg_byte = 0;
-        }
     }
 
     uint8_t data_tx_torque[8] = {

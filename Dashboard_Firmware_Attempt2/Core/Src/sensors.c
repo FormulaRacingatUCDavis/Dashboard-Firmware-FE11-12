@@ -163,6 +163,9 @@ uint16_t requested_throttle(){
     uint32_t max_power = get_max_power();
     uint16_t max_torque = get_max_torque(max_power);
 
+    // zero throttle if brake is pressed at all, prevents hardware bspd
+	if (brake.percent >= BRAKE_BSPD_THRESHOLD) return 0;
+
     torque_req = (throttle2.percent * max_torque * 10) / 100;  //upscale for MC code, Nm times 10
 
     // use reduced values from TC if TC torque request is lower
@@ -211,7 +214,7 @@ bool braking(){
 }
 
 bool brake_mashed(){
-    return brake.raw > RTD_BRAKE_THRESHOLD;
+    return brake.percent > RTD_BRAKE_THRESHOLD;
 }
 
 // check differential between the throttle sensors
@@ -239,7 +242,7 @@ bool brake_implausible() {
 
     // if both brake and throttle applied, brake implausible
     //return (temp_brake > 0 && temp_throttle > throttle_range * 0.25);
-    return (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD) && throttle2.percent > APPS1_BSPD_THRESHOLD);
+    return (brake.percent >= BRAKE_BSPD_THRESHOLD && throttle2.percent > APPS1_BSPD_THRESHOLD);
 }
 
 void update_percent(CALIBRATED_SENSOR_t* sensor){
