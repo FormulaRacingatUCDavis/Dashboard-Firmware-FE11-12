@@ -232,12 +232,12 @@ bool brake_implausible() {
     if (error == BRAKE_IMPLAUSIBLE) {
         // once brake implausibility detected,
         // can only revert to normal if throttle unapplied
-        return !(throttle1.percent <= APPS1_BSPD_RESET);
+        return !(throttle2.percent <= APPS1_BSPD_RESET);
     }
 
     // if both brake and throttle applied, brake implausible
     //return (temp_brake > 0 && temp_throttle > throttle_range * 0.25);
-    return (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD) && throttle1.percent > APPS1_BSPD_THRESHOLD);
+    return (brake.raw >= (brake.min + BRAKE_BSPD_THRESHOLD) && throttle2.percent > APPS1_BSPD_THRESHOLD);
 }
 
 void update_percent(CALIBRATED_SENSOR_t* sensor){

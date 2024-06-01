@@ -1145,9 +1145,9 @@ void MainEntry(void *argument)
 				break;
 			}
 
-		//			  if (brake_implausible()) {
-		//				  report_fault(BRAKE_IMPLAUSIBLE);
-		//			  }
+			if (brake_implausible()) {
+				report_fault(BRAKE_IMPLAUSIBLE);
+			}
 
 			break;
 		case FAULT:
