@@ -19,6 +19,8 @@ typedef struct __attribute__((__packed__)) Packet {
 	uint32_t time;
 } Packet;
 
+extern volatile float current_slip_ratio;
+
 // Function prototypes
 void telem_send(void);
 

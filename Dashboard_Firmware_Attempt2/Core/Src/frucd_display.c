@@ -238,7 +238,7 @@ void Display_DriveTemplate()
     soc_box.box_x1 = 270;
     soc_box.box_y1 = 35;
     soc_box.box_x2 = 450;
-    soc_box.box_y2 = 101;
+    soc_box.box_y2 = 95;
     soc_box.font = FONT_12X16;
     soc_box.last_color = C_BLACK;  // force box redraw
     soc_box.last_value = 255;
@@ -252,7 +252,7 @@ void Display_DriveTemplate()
     speed_box.last_value = 255;
 
     bms_temp_box.box_x1 = 270;
-	bms_temp_box.box_y1 = 104;
+	bms_temp_box.box_y1 = 110;
 	bms_temp_box.box_x2 = 450;
 	bms_temp_box.box_y2 = 170;
 	bms_temp_box.font = FONT_12X16;

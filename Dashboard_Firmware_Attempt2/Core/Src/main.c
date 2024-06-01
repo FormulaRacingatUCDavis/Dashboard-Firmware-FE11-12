@@ -1027,7 +1027,7 @@ void MainEntry(void *argument)
 
 	// strain gauge
 	sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
-	telem_id = 2;
+//	telem_id = 2;
 	can_tx_sg(&hcan1, sg_adc);
 
 	sprintf(sstr, "fsg: %u, rsg: %u", sg_adc, sg_rear);
