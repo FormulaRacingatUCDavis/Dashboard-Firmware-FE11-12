@@ -462,7 +462,7 @@ void draw_state(uint8_t state, uint16_t bms_status)
                         strcpy(string, "SHTDWN OPN");
                         break;
                     case UNCALIBRATED:
-                        color = C_RED;
+                        color = C_YELLOW;
                         strcpy(string, "UNCALIBRTD");
                         break;
                     case HARD_BSPD:
@@ -497,6 +497,10 @@ void draw_state(uint8_t state, uint16_t bms_status)
                     case DRIVE:
                         strcpy(string, "  DRIVE   ");
                         break;
+                    case STARTUP:
+                    	color = C_YELLOW;
+                    	strcpy(string, "LV LOCKED ");
+						break;
                     default:
 						color = C_RED;
 						strcpy(string, " YO WTF? ");

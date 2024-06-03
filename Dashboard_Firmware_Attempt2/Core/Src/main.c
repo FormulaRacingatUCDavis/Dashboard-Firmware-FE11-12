@@ -1077,6 +1077,12 @@ void MainEntry(void *argument)
 		case LV:
 			run_calibration();
 
+			// check if APPS pedal was calibrated
+			if(!sensors_calibrated()){
+				report_fault(UNCALIBRATED);
+				break;
+			}
+
 			if (drive_switch()) {
 			  // Drive switch should not be enabled during LV
 			  report_fault(DRIVE_REQUEST_FROM_LV);
@@ -1085,14 +1091,9 @@ void MainEntry(void *argument)
 
 			if (hv_switch()) {
 				// HV switch was flipped
-				// check if APPS pedal was calibrated
-				if (sensors_calibrated()) {
-					// Start charging the car to high voltage state
-					add_apps_deadzone();
-					//change_state(PRECHARGING);
-			  } else {
-				  	report_fault(UNCALIBRATED);
-			  }
+				add_apps_deadzone();
+				change_state(PRECHARGING);
+				break;
 			}
 
 			break;
@@ -1194,7 +1195,7 @@ void MainEntry(void *argument)
 					break;
 				case SHUTDOWN_CIRCUIT_OPEN:
 					if (shutdown_closed()) {
-						change_state(LV);
+						change_state(STARTUP); // change to startup so we don't instantly request precharge
 					}
 					break;
 				case HARD_BSPD:
@@ -1203,6 +1204,17 @@ void MainEntry(void *argument)
 			//						  change_state(LV);
 			//			  		  }
 					break;
+
+				case UNCALIBRATED:
+					run_calibration();
+
+					// check if APPS pedal was calibrated
+					if(sensors_calibrated()){
+						change_state(STARTUP); // change to startup so we don't instantly request precharge
+						break;
+					}
+					break;
+
 				default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
 					if (!hv_switch() && !drive_switch()) {
 						change_state(LV);
