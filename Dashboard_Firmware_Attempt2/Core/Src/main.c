@@ -973,12 +973,8 @@ void MainEntry(void *argument)
 	init_sensors();
 
 	Display_Init();
-	UG_FontSelect(&FONT_12X16);
-
-	UG_SetBackcolor(C_BLACK);
-	UG_SetForecolor(C_YELLOW);
-
-	Display_CalibrateScreen();
+	Display_Splashscreen();
+	osDelay(2000); // let their eyes bathe in the glory
 
 	Display_DriveTemplate();
 

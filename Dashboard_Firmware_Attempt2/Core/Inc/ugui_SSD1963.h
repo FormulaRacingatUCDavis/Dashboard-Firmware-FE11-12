@@ -49,12 +49,12 @@
 #define DISPLAY_WIDTH           480
 #define DISPLAY_HEIGHT          272
 
-
-#define CONCATENATE(name, function)                 CONCAT(name, function)
-#define CONCAT(name, function)                      name##function
-
-#define mmDisplayReset_Write(value) CONCATENATE(DISPLAY_RESET, _Write(value))
-#define mmDisplayCD_Write(value)    CONCATENATE(DISPLAY_CD, _Write(value))
+#ifdef USE_COLOR_RGB565
+#define DATA_t uint16_t
+#endif
+#ifdef USE_COLOR_RGB888
+#define DATA_t uint8_t
+#endif
 
 //////      Public Function Prototypes   ///////
 void SSD1963_Reset();
@@ -67,10 +67,8 @@ void SSD1963_ConsecutivePSet(UG_COLOR c);
 // Accelerators
 UG_RESULT HW_FillFrame(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, UG_COLOR c);
 UG_RESULT HW_DrawLine(UG_S16 x1 , UG_S16 y1 , UG_S16 x2 , UG_S16 y2 , UG_COLOR c );
-UG_RESULT HW_DrawImage(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, uint8_t *image, uint16_t pSize);
-//UG_RESULT HW_DrawImage_Special(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, uint8_t *image, uint16_t pSize);
-void GraphicLCDIntf_WriteM8_Compressed(uint8_t d_c, uint8_t wrData[], uint16_t num);
-
+UG_RESULT HW_DrawImage(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, DATA_t* image, uint16_t length);
+UG_RESULT HW_DrawImage_UCDCompressed(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, uint8_t* image, uint16_t length);
 
 /* [] END OF FILE */
 
