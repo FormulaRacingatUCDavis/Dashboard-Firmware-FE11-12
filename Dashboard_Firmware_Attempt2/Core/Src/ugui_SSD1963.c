@@ -251,7 +251,7 @@ UG_RESULT HW_DrawImage_UCDCompressed(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2,
 			k = image[i] & 0x3F;
 		}
 
-		for(uint8_t j = 0; j < k; j++){
+		for(uint8_t j = 0; j <= k; j++){
 			SSD1963_ConsecutivePSet(color);
 		}
 
