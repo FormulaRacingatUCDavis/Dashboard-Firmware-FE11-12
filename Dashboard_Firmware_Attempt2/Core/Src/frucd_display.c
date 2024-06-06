@@ -139,6 +139,7 @@ void Display_DebugTemplate()
     UG_FillScreen(C_BLACK);
 
     // draw labels
+    UG_FontSelect(&FONT_12X16);
     UG_PutString(270, 0, "PACK SOC:");
     UG_PutString(30, 120, "MAX PACK T:");
 //    UG_PutString(10, 75, "STATE:");
@@ -245,48 +246,49 @@ void Display_DriveTemplate()
     UG_FillScreen(C_BLACK);
 
     // draw labels
+    UG_FontSelect(&FONT_12X16);
     UG_PutString(100, 10, "MPH");
     UG_PutString(297, 10, "PACK SOC|T");
     UG_PutString(30, 180, "STATE:");
     UG_PutString(275, 180, "GLV V:");
 
     // setup textbox configs
-    soc_box.box_x1 = 270;
+    soc_box.box_x1 = 260;
     soc_box.box_y1 = 35;
     soc_box.box_x2 = 450;
     soc_box.box_y2 = 95;
-    soc_box.font = FONT_12X16;
+    soc_box.font = FONT_24X40;
     soc_box.last_color = C_BLACK;  // force box redraw
     soc_box.last_value = 255;
 
     speed_box.box_x1 = 30;
     speed_box.box_y1 = 35;
-    speed_box.box_x2 = 210;
+    speed_box.box_x2 = 220;
     speed_box.box_y2 = 170;
     speed_box.font = FONT_32X53;
     speed_box.last_color = C_BLACK;  // force box redraw
     speed_box.last_value = 255;
 
-    bms_temp_box.box_x1 = 270;
+    bms_temp_box.box_x1 = 260;
 	bms_temp_box.box_y1 = 110;
 	bms_temp_box.box_x2 = 450;
 	bms_temp_box.box_y2 = 170;
-	bms_temp_box.font = FONT_12X16;
+	bms_temp_box.font = FONT_24X40;
 	bms_temp_box.last_color = C_BLACK;  // force box redraw
 	bms_temp_box.last_value = 255;
 
 	state_box.box_x1 = 30;
 	state_box.box_y1 = 200;
-	state_box.box_x2 = 210;
-	state_box.box_y2 = 230;
-	state_box.font = FONT_12X16;
+	state_box.box_x2 = 220;
+	state_box.box_y2 = 250;
+	state_box.font = FONT_16X26;
 	state_box.last_color = C_BLACK;  // force box redraw
 
-	glv_v_box.box_x1 = 270;
+	glv_v_box.box_x1 = 260;
 	glv_v_box.box_y1 = 200;
 	glv_v_box.box_x2 = 450;
-	glv_v_box.box_y2 = 230;
-	glv_v_box.font = FONT_12X16;
+	glv_v_box.box_y2 = 250;
+	glv_v_box.font = FONT_16X26;
 	glv_v_box.last_color = C_BLACK;  // force box redraw
 }
 
@@ -551,7 +553,7 @@ void draw_glv_v(int16_t data) {
 
     char str[11];
     sprintf(str, "%.2f", converted_glv_v);
-    draw_textbox(&glv_v_box, color, str, 11);
+    draw_textbox(&glv_v_box, color, str, 5);
 }
 
 
