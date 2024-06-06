@@ -1007,7 +1007,7 @@ void MainEntry(void *argument)
 	telem_send();
 	//write_rx_to_sd();
 
-	char sstr[100];
+	//char sstr[100];
 	//	  sprintf(sstr, "apps1: %d, apps2: %d, bse: %d      ", throttle1.percent, throttle2.percent, brake.percent);
 	//	  UG_PutString(5, 250, sstr);
 
@@ -1022,12 +1022,12 @@ void MainEntry(void *argument)
 	front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
 
 	// strain gauge
-	sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
+	//sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
 //	telem_id = 2;
-	can_tx_sg(&hcan1, sg_adc);
+	//can_tx_sg(&hcan1, sg_adc);
 
-	sprintf(sstr, "fsg: %u, rsg: %u", sg_adc, sg_rear);
-	UG_PutString(5, 250, sstr);
+	//sprintf(sstr, "fsg: %u, rsg: %u", sg_adc, sg_rear);
+	//UG_PutString(5, 250, sstr);
 
 	// traction control
 	traction_control_enabled_update();
@@ -1035,8 +1035,8 @@ void MainEntry(void *argument)
 		traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	}
 
- 	sprintf(sstr, "trq: %lu, slip rat: %.2f", torque_req, current_slip_ratio);
-	UG_PutString(5, 1, sstr);
+ 	//sprintf(sstr, "trq: %lu, slip rat: %.2f", torque_req, current_slip_ratio);
+	//UG_PutString(5, 1, sstr);
 
 	// If shutdown circuit opens in any state
 	if (!shutdown_closed()) {

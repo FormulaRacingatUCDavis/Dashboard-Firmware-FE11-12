@@ -25,7 +25,7 @@ typedef struct
 {
 	TIM_HandleTypeDef* h_tim;
 	uint32_t tim_channel;
-	uint32_t buf[1];
+	uint32_t buf[3];
 	uint32_t hclk;
 } WheelSpeedPW_t;
 

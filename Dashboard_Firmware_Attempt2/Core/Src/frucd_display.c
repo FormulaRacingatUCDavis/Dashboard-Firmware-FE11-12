@@ -16,6 +16,9 @@
 #include "can_manager.h"
 #include "fsm.h"
 
+#define INV_WHEEL_RADIUS_MI 1302
+#define SPEED_REFRESH_RATE_MS 100
+
 extern volatile uint32_t front_right_wheel_speed;
 extern volatile uint32_t front_left_wheel_speed;
 
@@ -242,8 +245,8 @@ void Display_DriveTemplate()
     UG_FillScreen(C_BLACK);
 
     // draw labels
-    UG_PutString(68, 10, "SPEED");
-    UG_PutString(297, 10, "MAX PACK T");
+    UG_PutString(100, 10, "MPH");
+    UG_PutString(297, 10, "PACK SOC|T");
     UG_PutString(30, 180, "STATE:");
     UG_PutString(275, 180, "GLV V:");
 
@@ -312,7 +315,16 @@ void Debug_Display_Update() {
 }
 
 void draw_speed(uint32_t fl_wheel_speed, uint32_t fr_wheel_speed) {
-	draw_value_textbox(&speed_box, (fl_wheel_speed+fr_wheel_speed)/2);
+	// slow down speed so its actually possible to read it
+	static uint32_t last_draw = 0;
+	uint32_t tick = HAL_GetTick();
+	if(tick - last_draw < SPEED_REFRESH_RATE_MS) return;
+	last_draw = tick;
+
+	char string[10];
+	unsigned int speed_mph = fr_wheel_speed * 60 / INV_WHEEL_RADIUS_MI;  // wheel speed is in RPM
+	uint16_t str_len = sprintf(string, "%02u", speed_mph);
+	draw_textbox(&speed_box, C_LIGHTBLUE, string, str_len);
 }
 
 void draw_soc(uint16_t soc)
