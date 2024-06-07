@@ -57,7 +57,7 @@ int mount_sd_card(void) {
 	 return 0;
 }
 
-void write_data_record(uint32_t id, uint8_t data[]){
+void write_data_record(uint32_t id, uint8_t data[8]){
 	int tick = HAL_GetTick();
 
 	// make sure we don't reach the end of the buffer
@@ -66,7 +66,7 @@ void write_data_record(uint32_t id, uint8_t data[]){
 		ind = 0;
 	}
 
-	int bytes = sprintf(&buffer[ind], "%lX,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", id, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], tick);
+	int bytes = sprintf(&buffer[ind], "%lX,%x,%x,%x,%x,%x,%x,%x,%x,%x\n", id, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], tick);
 	ind += bytes;
 }
 

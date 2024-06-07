@@ -36,12 +36,10 @@ uint8_t RxData[8];
 uint8_t mc_voltage_msg_counter = 0;
 uint8_t mc_state_msg_counter = 0;
 uint8_t mc_fault_msg_counter = 0;
-uint8_t mc_param_msg_counter = 0;
 uint8_t mc_motor_pos_msg_counter = 0;
 uint8_t mc_glv_msg_counter = 0;
 uint8_t mc_temp_msg_counter = 0;
 uint8_t motor_temp_msg_counter = 0;
-
 uint8_t torque_request_msg_counter = 0;
 uint8_t vcu_state_msg_counter = 0;
 uint8_t tc_sg_msg_counter = 0;
@@ -74,7 +72,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_voltage_msg_counter == 0) write_rx_to_sd();
 			mc_voltage_msg_counter++;
-			mc_voltage_msg_counter %= 100;
+			mc_voltage_msg_counter %= 20;
 
 			break;
 		case MC_INTERNAL_STATES:
@@ -83,7 +81,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_state_msg_counter == 0) write_rx_to_sd();
 			mc_state_msg_counter++;
-			mc_state_msg_counter %= 100;
+			mc_state_msg_counter %= 20;
 
 			break;
 		case PEI_CURRENT_SHUTDOWN:
@@ -93,7 +91,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 		case MC_FAULT_CODES:
 			if (mc_fault_msg_counter == 0) write_rx_to_sd();
 			mc_fault_msg_counter++;
-			mc_fault_msg_counter %= 100;
+			mc_fault_msg_counter %= 20;
 
 			for (uint8_t i = 0; i < 8; i++) {
 				if (RxData[i] > 0) {
@@ -109,11 +107,6 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			if (RxData[0] == 0x20 && RxData[2] == 1) {
 				mc_fault_clear_success = 1;
 			}
-
-			if (mc_param_msg_counter == 0) write_rx_to_sd();
-			mc_param_msg_counter++;
-			mc_param_msg_counter %= 100;
-
 			break;
 //		case WHEEL_SPEED_REAR:
 //			rear_right_wheel_speed = (RxData[0] << 8);
@@ -137,7 +130,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_motor_pos_msg_counter == 0) write_rx_to_sd();
 			mc_motor_pos_msg_counter++;
-			mc_motor_pos_msg_counter %= 25;
+			mc_motor_pos_msg_counter %= 5;
 
 			break;
 		case COOLING_LOOP:
@@ -159,7 +152,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (motor_temp_msg_counter == 0) write_rx_to_sd();
 			motor_temp_msg_counter++;
-			motor_temp_msg_counter %= 100;
+			motor_temp_msg_counter %= 20;
 
 			break;
 		case MC_TEMP_1:
@@ -170,7 +163,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_temp_msg_counter == 0) write_rx_to_sd();
 			mc_temp_msg_counter++;
-			mc_temp_msg_counter %= 100;
+			mc_temp_msg_counter %= 20;
 
 			break;
 		case MC_INTERNAL_VOLTS:
@@ -277,12 +270,9 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 	TxHeader.DLC = 8;
 
     uint8_t byte5 = 0b010;   //speed mode | discharge_enable | inverter enable
-    if(hv_requested() && state != PRECHARGING){
-    	byte5 |= 0x01;  //set inverter enable bit
-    }
-
     uint16_t throttle_msg_byte = 0;
     if (state == DRIVE) {
+    	byte5 |= 0x01;  //set inverter enable bit
     	throttle_msg_byte = requested_throttle();
     }
 

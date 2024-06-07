@@ -1,7 +1,7 @@
 #include "fsm.h"
 
 // Initial FSM state
-volatile state_t state = STARTUP;
+volatile state_t state = LV_LOCK;
 volatile error_t error = NONE;
 
 /************ States ************/
@@ -25,10 +25,15 @@ void report_fault(error_t _error) {
 uint8_t hv_requested(){
     return (state == PRECHARGING)
         || (state == HV_ENABLED)
+		|| (state == HV_LOCK)
         || (state == DRIVE)
         || (error == BRAKE_NOT_PRESSED)
         || (error == SENSOR_DISCREPANCY)
         || (error == BRAKE_IMPLAUSIBLE);
+}
+
+uint8_t inverter_enable(){
+    return (state == DRIVE);
 }
 
 uint8_t one_byte_state(){

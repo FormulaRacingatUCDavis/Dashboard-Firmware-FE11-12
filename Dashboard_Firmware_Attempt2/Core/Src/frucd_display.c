@@ -464,7 +464,7 @@ void draw_state(uint8_t state, uint16_t bms_status)
                         color = C_RED;
                         strcpy(string, "DRV FRM LV");
                         break;
-                    case CONSERVATIVE_TIMER_MAXED:
+                    case PRECHARGE_TIMEOUT:
                         color = C_RED;
                         strcpy(string, "PRE TM OUT");
                         break;
@@ -524,9 +524,13 @@ void draw_state(uint8_t state, uint16_t bms_status)
                     case DRIVE:
                         strcpy(string, "  DRIVE   ");
                         break;
-                    case STARTUP:
+                    case LV_LOCK:
                     	color = C_YELLOW;
                     	strcpy(string, "LV LOCKED ");
+						break;
+                    case HV_LOCK:
+						color = C_YELLOW;
+						strcpy(string, "HV LOCKED ");
 						break;
                     default:
 						color = C_RED;
