@@ -11,6 +11,7 @@
 #include "xsens/xsens_utility.h"  // Needed for quaternion conversion function
 #include "fatfs.h"
 #include "can_manager.h"
+#include "sd_card.h"
 
 #include <stdbool.h>
 
@@ -97,7 +98,7 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 			int16_t ang_y = (int16_t)mtdata->data.f4x3[1];
 			int16_t ang_z = (int16_t)mtdata->data.f4x3[2];
 
-			uint8_t data[6];
+			uint8_t data[8];
 			data[0] = HI8(ang_x);
 			data[1] = LO8(ang_x);
 			data[2] = HI8(ang_y);
@@ -105,7 +106,9 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 			data[4] = HI8(ang_z);
 			data[5] = LO8(ang_z);
 
-			CAN_Send(&hcan1, 0x100, data, 6);
+
+			//CAN_Send(&hcan1, 0x100, data, 6);
+			write_data_record(0x100, data);
             }
             break;
 
@@ -125,7 +128,8 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 			data[4] = HI8(acc_z);
 			data[5] = LO8(acc_z);
 
-			CAN_Send(&hcan1, 0x101, data, 6);
+			//CAN_Send(&hcan1, 0x101, data, 6);
+			write_data_record(0x100, data);
             }
             break;
 

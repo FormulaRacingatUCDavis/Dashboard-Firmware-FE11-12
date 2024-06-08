@@ -5332,7 +5332,7 @@ void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const 
    if ( font->char_width % 8 ) bn++;
    actual_char_width = (font->widths ? font->widths[bt - font->start_char] : font->char_width);
 
-   /* Is hardware acceleration available?
+    Is hardware acceleration available?
    if ( gui->driver[DRIVER_FILL_AREA].state & DRIVER_ENABLED )
    {
 	   //(void(*)(UG_COLOR))
@@ -5382,7 +5382,7 @@ void _UG_PutChar( char chr, UG_S16 x, UG_S16 y, UG_COLOR fc, UG_COLOR bc, const 
    }
    else
    {
-	   /*Not accelerated output
+	   Not accelerated output
 	   if (font->font_type == FONT_TYPE_1BPP)
 	   {
          index = (bt - font->start_char)* font->char_height * bn;

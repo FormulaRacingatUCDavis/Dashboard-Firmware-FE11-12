@@ -738,6 +738,7 @@ typedef struct
 #define C_BLACK                       0x0000
 #define C_WHITE                       0xFFFF
 #define C_BLUE						  0x001f
+#define C_LIGHTBLUE					  0x771f
 #define C_GRAY						  0xa514
 #endif
 

@@ -973,12 +973,8 @@ void MainEntry(void *argument)
 	init_sensors();
 
 	Display_Init();
-	UG_FontSelect(&FONT_12X16);
-
-	UG_SetBackcolor(C_BLACK);
-	UG_SetForecolor(C_YELLOW);
-
-	Display_CalibrateScreen();
+	Display_Splashscreen();
+	osDelay(2000); // let their eyes bathe in the glory
 
 	Display_DriveTemplate();
 
@@ -1011,7 +1007,7 @@ void MainEntry(void *argument)
 	telem_send();
 	//write_rx_to_sd();
 
-	char sstr[100];
+	//char sstr[100];
 	//	  sprintf(sstr, "apps1: %d, apps2: %d, bse: %d      ", throttle1.percent, throttle2.percent, brake.percent);
 	//	  UG_PutString(5, 250, sstr);
 
@@ -1026,12 +1022,12 @@ void MainEntry(void *argument)
 	front_left_wheel_speed = WheelSpeed_GetCPS(&front_left_wheel_speed_t);
 
 	// strain gauge
-	sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
+	//sg_adc = get_adc_conversion(&hadc1, STRAIN_GAUGE);
 //	telem_id = 2;
-	can_tx_sg(&hcan1, sg_adc);
+	//can_tx_sg(&hcan1, sg_adc);
 
-	sprintf(sstr, "fsg: %u, rsg: %u", sg_adc, sg_rear);
-	UG_PutString(5, 250, sstr);
+	//sprintf(sstr, "fsg: %u, rsg: %u", sg_adc, sg_rear);
+	//UG_PutString(5, 250, sstr);
 
 	// traction control
 	traction_control_enabled_update();
@@ -1039,8 +1035,8 @@ void MainEntry(void *argument)
 		traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	}
 
- 	sprintf(sstr, "trq: %lu, slip rat: %.2f", torque_req, current_slip_ratio);
-	UG_PutString(5, 1, sstr);
+ 	//sprintf(sstr, "trq: %lu, slip rat: %.2f", torque_req, current_slip_ratio);
+	//UG_PutString(5, 1, sstr);
 
 	// If shutdown circuit opens in any state
 	if (!shutdown_closed()) {
@@ -1065,9 +1061,10 @@ void MainEntry(void *argument)
 	}
 
 	Xsens_Update(&huart4);
+	uint32_t precharge_tick_start = 0;
 
 	switch (state) {
-		case STARTUP:
+		case LV_LOCK:
 			run_calibration();
 
 			if (!hv_switch() && !drive_switch()) {
@@ -1077,6 +1074,12 @@ void MainEntry(void *argument)
 		case LV:
 			run_calibration();
 
+			// check if APPS pedal was calibrated
+			if(!sensors_calibrated()){
+				report_fault(UNCALIBRATED);
+				break;
+			}
+
 			if (drive_switch()) {
 			  // Drive switch should not be enabled during LV
 			  report_fault(DRIVE_REQUEST_FROM_LV);
@@ -1085,35 +1088,43 @@ void MainEntry(void *argument)
 
 			if (hv_switch()) {
 				// HV switch was flipped
-				// check if APPS pedal was calibrated
-				if (sensors_calibrated()) {
-					// Start charging the car to high voltage state
-					add_apps_deadzone();
-					//change_state(PRECHARGING);
-			  } else {
-				  	report_fault(UNCALIBRATED);
-			  }
+				add_apps_deadzone();
+				precharge_tick_start = HAL_GetTick();
+				change_state(PRECHARGING);
+				break;
 			}
 
 			break;
 		case PRECHARGING:
-	//			  if (capacitor_volt > PRECHARGE_THRESHOLD) {
-
-		  // if main AIRs closed
-			if ((shutdown_flags & 0b110) == 0b110) {
-				// Finished charging to HV on time
-				change_state(HV_ENABLED);
-				break;
-			}
 			if (!hv_switch()) {
 				// Driver flipped off HV switch
 				change_state(LV);
 				break;
 			}
-			if (drive_switch()) {
-				// Drive switch should not be enabled during PRECHARGING
-				report_fault(DRIVE_REQUEST_FROM_LV);
+
+			if((HAL_GetTick() - precharge_tick_start) > PRECHARGE_TIMEOUT_MS){
+				report_fault(PRECHARGE_TIMEOUT);
 				break;
+			}
+
+		  // if main AIRs closed
+			if ((shutdown_flags & 0b110) == 0b110) {
+				// Finished charging to HV on time
+				change_state(HV_LOCK);
+				break;
+			}
+
+			break;
+		case HV_LOCK:
+			if (!hv_switch()) {
+				// Driver flipped off HV switch
+				change_state(LV);
+				break;
+			}
+
+			if(!drive_switch()){
+				// wait until drive is low to switch into true HV
+				change_state(HV_ENABLED);
 			}
 			break;
 		case HV_ENABLED:
@@ -1122,7 +1133,6 @@ void MainEntry(void *argument)
 				change_state(LV);
 				break;
 			}
-
 			if (drive_switch()) {
 				// Driver flipped on drive switch
 				// Need to press on pedal at the same time to go to drive
@@ -1141,12 +1151,12 @@ void MainEntry(void *argument)
 				// Revert to HV
 				change_state(HV_ENABLED);
 				break;
-		  }
+			}
 
 			if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules || capacitor_volt < PRECHARGE_THRESHOLD) {
 				// HV switched flipped off, so can't drive
 				// or capacitor dropped below threshold
-				report_fault(HV_DISABLED_WHILE_DRIVING);
+				change_state(LV);
 				break;
 			}
 
@@ -1158,8 +1168,10 @@ void MainEntry(void *argument)
 		case FAULT:
 			switch (error) {
 				case BRAKE_NOT_PRESSED:
-					if (!hv_switch())
+					if (!hv_switch()){
 						change_state(LV);
+						break;
+					}
 
 					if (!drive_switch()) {
 						// reset drive switch and try again
@@ -1175,26 +1187,29 @@ void MainEntry(void *argument)
 					}
 
 					if (!hv_switch())
-						report_fault(HV_DISABLED_WHILE_DRIVING);
+						change_state(LV);
 
 					break;
 				case BRAKE_IMPLAUSIBLE:
-					if (!brake_implausible() && hv_switch() && drive_switch())
-						change_state(DRIVE);
-
-					if (!hv_switch() && !drive_switch())
+					if (!hv_switch()){
 						change_state(LV);
+						break;
+					}
 
-					if (!drive_switch())
+					if (!drive_switch()){
 						change_state(HV_ENABLED);
+						break;
+					}
 
-					if (!hv_switch())
-						report_fault(HV_DISABLED_WHILE_DRIVING);
+					if (!brake_implausible()){
+						change_state(DRIVE);
+						break;
+					}
 
 					break;
 				case SHUTDOWN_CIRCUIT_OPEN:
 					if (shutdown_closed()) {
-						change_state(LV);
+						change_state(LV_LOCK); // change to startup so we don't instantly request precharge
 					}
 					break;
 				case HARD_BSPD:
@@ -1203,6 +1218,17 @@ void MainEntry(void *argument)
 			//						  change_state(LV);
 			//			  		  }
 					break;
+
+				case UNCALIBRATED:
+					run_calibration();
+
+					// check if APPS pedal was calibrated
+					if(sensors_calibrated()){
+						change_state(LV_LOCK); // change to startup so we don't instantly request precharge
+						break;
+					}
+					break;
+
 				default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
 					if (!hv_switch() && !drive_switch()) {
 						change_state(LV);
@@ -1240,7 +1266,7 @@ void SDCardEntry(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(100);
+    //osDelay(100);
     sd_card_write();
   }
 
@@ -1261,15 +1287,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
 	if (htim->Instance == TIM7) {
-		if (state == PRECHARGING) {
-			precharge_timer_ms += TMR1_PERIOD_MS;
-		}
-		if (precharge_timer_ms > PRECHARGE_TIMEOUT_MS) {
-		  report_fault(CONSERVATIVE_TIMER_MAXED);
-		}
-		else {
-			precharge_timer_ms = 0;
-		}
+//		if (state == PRECHARGING) {
+//			precharge_timer_ms += TMR1_PERIOD_MS;
+//		}
+//		if (precharge_timer_ms > PRECHARGE_TIMEOUT_MS) {
+//		  report_fault(CONSERVATIVE_TIMER_MAXED);
+//		}
+//		else {
+//			precharge_timer_ms = 0;
+//		}
 	}
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {

@@ -47,13 +47,6 @@
 #define LCD_REG              (*((volatile uint16_t *) 0x60000000)) 	/* RS = 0 */
 #define LCD_RAM              (*((volatile uint16_t *) 0x60000100)) 	/* RS = 1 */
 
-#ifdef USE_COLOR_RGB565
-#define DATA_t uint16_t
-#endif
-#ifdef USE_COLOR_RGB888
-#define DATA_t uint8_t
-#endif
-
 
 //////      Private Function Prototypes   ///////
 
@@ -188,8 +181,8 @@ UG_RESULT HW_FillFrame(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, UG_COLOR c)
     if((x2 < 0) ||(x2 >= DISPLAY_WIDTH) || (y2 < 0) || (y2 >= DISPLAY_HEIGHT)) return UG_RESULT_FAIL;
 
     SSD1963_WindowSet(x1,x2,y1,y2);
+    SSD1963_WriteMemoryStart();
 
-    write_command(0x2c);
     for (loopx = x1; loopx < x2 + 1; loopx++)
     {
         for (loopy = y1; loopy < y2 + 1; loopy++)
@@ -217,16 +210,52 @@ UG_RESULT HW_DrawLine( UG_S16 x1 , UG_S16 y1 , UG_S16 x2 , UG_S16 y2 , UG_COLOR 
     return UG_RESULT_FAIL;
 }
 
-UG_RESULT HW_DrawImage(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, uint8_t *image, uint16_t pSize)
+UG_RESULT HW_DrawImage(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, DATA_t* image, uint16_t length)
 {
 
     if((x1 < 0) ||(x1 >= DISPLAY_WIDTH) || (y1 < 0) || (y1 >= DISPLAY_HEIGHT)) return UG_RESULT_FAIL;
     if((x2 < 0) ||(x2 >= DISPLAY_WIDTH) || (y2 < 0) || (y2 >= DISPLAY_HEIGHT)) return UG_RESULT_FAIL;
 
     SSD1963_WindowSet(x1,x2,y1,y2);
+    SSD1963_WriteMemoryStart();
 
-    write_command(0x2c);
-    write_multi_data((DATA_t*)image, pSize*3);
+    write_multi_data(image, length);
+
+    return UG_RESULT_OK;
+}
+
+UG_RESULT HW_DrawImage_UCDCompressed(UG_S16 x1, UG_S16 y1, UG_S16 x2, UG_S16 y2, uint8_t* image, uint16_t length)
+{
+	if((x1 < 0) ||(x1 >= DISPLAY_WIDTH) || (y1 < 0) || (y1 >= DISPLAY_HEIGHT)) return UG_RESULT_FAIL;
+	if((x2 < 0) ||(x2 >= DISPLAY_WIDTH) || (y2 < 0) || (y2 >= DISPLAY_HEIGHT)) return UG_RESULT_FAIL;
+
+	const uint16_t BLUE = 0x00E6;
+	const uint16_t GOLD = 0xFDE0;
+	const uint16_t WHITE = 0xFFFF;
+	uint16_t color;
+	uint8_t k;
+
+	SSD1963_WindowSet(x1,x2,y1,y2);
+	SSD1963_WriteMemoryStart();
+
+	for(uint16_t i = 0; i < length; i++){
+		if(image[i] & 0x80){
+			color = WHITE;
+			k = image[i] & 0x7F;
+		} else {
+			if(image[i] & 0x40)
+				color = BLUE;
+			else
+				color = GOLD;
+
+			k = image[i] & 0x3F;
+		}
+
+		for(uint8_t j = 0; j <= k; j++){
+			SSD1963_ConsecutivePSet(color);
+		}
+
+	}
 
     return UG_RESULT_OK;
 }

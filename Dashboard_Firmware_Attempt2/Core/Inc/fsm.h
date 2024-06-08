@@ -11,13 +11,14 @@ typedef enum {
     HV_ENABLED,
     DRIVE,
     FAULT,
-    STARTUP
+    LV_LOCK,  // wait for LV switch to be low
+	HV_LOCK   // wait for HV switch to be low
 } state_t;
 
 typedef enum {
     NONE,
     DRIVE_REQUEST_FROM_LV,
-    CONSERVATIVE_TIMER_MAXED,
+    PRECHARGE_TIMEOUT,
     BRAKE_NOT_PRESSED,
     HV_DISABLED_WHILE_DRIVING,
     SENSOR_DISCREPANCY,

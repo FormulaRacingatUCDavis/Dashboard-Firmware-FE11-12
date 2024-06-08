@@ -28,6 +28,7 @@
 // PUBLIC FUNCTION PROTOTYPES //
 void Display_Init();
 void Display_CalibrateScreen();
+void Display_Splashscreen();
 void Display_DebugTemplate();
 void Display_DriveTemplate();
 void Display_Update();
