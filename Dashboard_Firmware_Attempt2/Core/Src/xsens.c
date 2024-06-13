@@ -120,7 +120,7 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 			int16_t acc_y = (int16_t)(mtdata->data.f4x3[1] * 100);
 			int16_t acc_z = (int16_t)(mtdata->data.f4x3[2] * 100);
 
-			uint8_t data[6];
+			uint8_t data[8];
 			data[0] = HI8(acc_x);
 			data[1] = LO8(acc_x);
 			data[2] = HI8(acc_y);

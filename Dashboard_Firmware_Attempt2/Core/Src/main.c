@@ -970,6 +970,7 @@ static void MX_GPIO_Init(void)
 void MainEntry(void *argument)
 {
   /* USER CODE BEGIN 5 */
+	uint32_t precharge_tick_start = 0;
 	init_sensors();
 
 	Display_Init();
@@ -1061,7 +1062,6 @@ void MainEntry(void *argument)
 	}
 
 	Xsens_Update(&huart4);
-	uint32_t precharge_tick_start = 0;
 
 	switch (state) {
 		case LV_LOCK:
@@ -1080,11 +1080,11 @@ void MainEntry(void *argument)
 				break;
 			}
 
-			if (drive_switch()) {
+			//if (drive_switch()) {
 			  // Drive switch should not be enabled during LV
-			  report_fault(DRIVE_REQUEST_FROM_LV);
-			  break;
-			}
+			  //report_fault(DRIVE_REQUEST_FROM_LV);
+			  //break;
+			//}
 
 			if (hv_switch()) {
 				// HV switch was flipped
