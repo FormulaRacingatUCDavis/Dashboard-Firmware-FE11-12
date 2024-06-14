@@ -2,7 +2,7 @@
 #define	CONFIG_H
 
 // How long to wait for pre-charging to finish before timing out
-#define PRECHARGE_TIMEOUT_MS 4000
+#define PRECHARGE_TIMEOUT_MS 8000
 // Delay between checking pre-charging state
 
 #define TMR1_PERIOD_MS 20
@@ -34,6 +34,6 @@
 #define BRAKE_BSPD_THRESHOLD 30
 
 #define MAX_TORQUE_NM 230  //230 Nm
-#define MAX_POWER_W 78000   // rules is 80, leave some gap
+#define MAX_POWER_W 66000   // rules is 80, leave some gap
 
 #endif

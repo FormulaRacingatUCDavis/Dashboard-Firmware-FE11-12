@@ -24,8 +24,8 @@ const uint16_t pulses_per_rev = 60; // from wheel speed sensor
 float target_slip_ratio = 0.17;
 volatile float current_slip_ratio = 0;
 
-const float kP = 5000;
-const float kI = 100;
+const float kP = 1500;
+const float kI = 400;
 const float kD = 0; // probably don't need this term
 
 void traction_control_PID(uint32_t fr_wheel_speed, uint32_t fl_wheel_speed) {

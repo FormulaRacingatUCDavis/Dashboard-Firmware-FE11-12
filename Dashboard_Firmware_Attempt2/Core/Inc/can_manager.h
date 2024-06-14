@@ -31,12 +31,13 @@ typedef enum {
 	MC_TEMP_3 = 0x0A2,
 	MC_INTERNAL_VOLTS = 0x0A9,
 	COOLING_LOOP = 0x400,
-	STRAIN_GAUGE_REAR = 0x403
+	STRAIN_GAUGE_REAR = 0x403,
+	MC_INTERNAL_CURRENTS = 0x0A6
 } CAN_ID;
 
 extern volatile uint8_t mc_lockout;
 extern volatile uint8_t mc_enabled;
-extern volatile uint16_t capacitor_volt;
+extern volatile int16_t capacitor_volt;
 extern volatile uint8_t shutdown_flags;
 extern volatile uint8_t estop_flags;
 extern volatile uint8_t switches;
@@ -59,6 +60,8 @@ extern volatile int16_t inlet_pres;
 extern volatile int16_t outlet_pres;
 extern volatile uint16_t telem_id;
 extern volatile uint16_t sg_rear;
+extern volatile uint16_t max_power;
+extern volatile int16_t voltage_x10;
 
 extern CAN_RxHeaderTypeDef RxHeader;
 extern uint8_t RxData[8];

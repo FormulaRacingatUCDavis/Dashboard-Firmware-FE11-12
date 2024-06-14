@@ -140,7 +140,7 @@ void Display_DebugTemplate()
 
     // draw labels
     UG_FontSelect(&FONT_12X16);
-    UG_PutString(270, 0, "PACK SOC:");
+    UG_PutString(270, 0, "MAX KW:");
     UG_PutString(30, 120, "MAX PACK T:");
 //    UG_PutString(10, 75, "STATE:");
     UG_PutString(30, 180, "STATE:");
@@ -306,7 +306,7 @@ void Display_Update()
 }
 
 void Debug_Display_Update() {
-	draw_soc(soc);
+	draw_soc(max_power);
 	draw_bms_temp(PACK_TEMP);
 	draw_state(one_byte_state(), bms_status);
 	draw_glv_v(glv_v);

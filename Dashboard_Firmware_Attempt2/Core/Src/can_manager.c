@@ -5,7 +5,7 @@
 
 volatile uint8_t mc_lockout;
 volatile uint8_t mc_enabled;
-volatile uint16_t capacitor_volt = 0;
+volatile int16_t capacitor_volt = 0;
 volatile uint8_t shutdown_flags = 0b0011111000;  //start with shutdown flags OK
 volatile uint8_t estop_flags = 0;
 volatile uint8_t switches = 0xC0;   //start with switches on to stay in startup state
@@ -29,6 +29,8 @@ volatile int16_t inlet_pres = 0;
 volatile int16_t outlet_pres = 0;
 volatile uint16_t telem_id = 0;
 volatile uint16_t sg_rear = 0;
+volatile uint16_t max_power = 0;
+volatile int16_t voltage_x10 = 0;
 
 CAN_RxHeaderTypeDef RxHeader;
 uint8_t RxData[8];
@@ -64,7 +66,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_voltage_msg_counter == 0) write_rx_to_sd();
 			mc_voltage_msg_counter++;
-			mc_voltage_msg_counter %= 20;
+			mc_voltage_msg_counter %= 50;
 
 			break;
 		case MC_INTERNAL_STATES:
@@ -75,7 +77,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_state_msg_counter == 0) write_rx_to_sd();
 			mc_state_msg_counter++;
-			mc_state_msg_counter %= 20;
+			mc_state_msg_counter %= 50;
 
 			break;
 		case PEI_CURRENT_SHUTDOWN:
@@ -87,7 +89,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_fault_msg_counter == 0) write_rx_to_sd();
 			mc_fault_msg_counter++;
-			mc_fault_msg_counter %= 20;
+			mc_fault_msg_counter %= 50;
 
 			for (uint8_t i = 0; i < 8; i++) {
 				if (RxData[i] > 0) {
@@ -100,7 +102,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			}
 			break;
 		case MC_PARAM_RESPONSE:
-			static uint8_t mc_param_msg_counter = 0;
+			//static uint8_t mc_param_msg_counter = 0;
 
 			if (RxData[0] == 0x20 && RxData[2] == 1) {
 				mc_fault_clear_success = 1;
@@ -130,7 +132,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_motor_pos_msg_counter == 0) write_rx_to_sd();
 			mc_motor_pos_msg_counter++;
-			mc_motor_pos_msg_counter %= 5;
+			mc_motor_pos_msg_counter %= 10;
 
 			break;
 		case COOLING_LOOP:
@@ -154,7 +156,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (motor_temp_msg_counter == 0) write_rx_to_sd();
 			motor_temp_msg_counter++;
-			motor_temp_msg_counter %= 20;
+			motor_temp_msg_counter %= 50;
 
 			break;
 		case MC_TEMP_1:
@@ -167,7 +169,7 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 			if (mc_temp_msg_counter == 0) write_rx_to_sd();
 			mc_temp_msg_counter++;
-			mc_temp_msg_counter %= 20;
+			mc_temp_msg_counter %= 50;
 
 			break;
 		case MC_INTERNAL_VOLTS:
@@ -180,6 +182,13 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 			mc_glv_msg_counter++;
 			mc_glv_msg_counter %= 100;
 
+			break;
+		case MC_INTERNAL_CURRENTS:
+			int16_t current_x10 = (RxData[7] << 8) + RxData[6];
+			if(capacitor_volt > 0 && current_x10 > 0){
+				uint16_t power = (capacitor_volt / 10) * (current_x10 / 10) / 1000;
+				if(power > max_power) max_power = power;
+			}
 			break;
 		case STRAIN_GAUGE_REAR:
 			sg_rear = RxData[0] << 8;
@@ -220,7 +229,7 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 
 	if (vcu_state_msg_counter == 0) write_tx_to_sd(TxHeader, data_tx_state);
 	vcu_state_msg_counter++;
-	vcu_state_msg_counter %= 2;
+	vcu_state_msg_counter %= 50;
 
     if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_state, &TxMailbox) != HAL_OK)
 	{
