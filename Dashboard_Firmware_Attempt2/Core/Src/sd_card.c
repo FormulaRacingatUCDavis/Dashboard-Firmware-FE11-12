@@ -25,6 +25,8 @@ static uint32_t index_top = 0;
 static UINT bytes_written = 0;
 static uint32_t last_write_index = 0;
 
+static void sd_card_write_buffer(void);
+
 SD_CARD_MOUNT_RESULT sd_card_mount(void) {
   	 FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
   	 if (res != FR_OK)
@@ -78,16 +80,7 @@ void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
 }
 
 void sd_card_write_sync(void) {
-	if(ind == last_write_index) {
-		return;
-	} else if(ind > last_write_index) {
-		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &bytes_written);
-	} else {
-		/* index < last_write_index */
-		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &bytes_written);
-		f_write(&SDFile, buffer, ind, &bytes_written);
-	}
-
+	sd_card_write_buffer();
 	sd_card_flush();
 	last_write_index = ind;
 
@@ -98,15 +91,7 @@ void sd_card_write_sync(void) {
 void sd_card_write_async(void) {
 	static uint32_t num_async_writes = 0;
 
-	if(ind == last_write_index) {
-		return;
-	} else if(ind > last_write_index) {
-		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &bytes_written);
-	} else {
-		/* index < last_write_index */
-		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &bytes_written);
-		f_write(&SDFile, buffer, ind, &bytes_written);
-	}
+	sd_card_write_buffer();
 
 	/* If we've gone too long without syncing, force a flush */
 	++num_async_writes;
@@ -122,4 +107,16 @@ void sd_card_write_async(void) {
 
 void sd_card_flush(void) {
 	f_sync(&SDFile);
+}
+
+static void sd_card_write_buffer(void) {
+	if(ind == last_write_index) {
+		return;
+	} else if(ind > last_write_index) {
+		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &bytes_written);
+	} else {
+		/* index < last_write_index */
+		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &bytes_written);
+		f_write(&SDFile, buffer, ind, &bytes_written);
+	}
 }
