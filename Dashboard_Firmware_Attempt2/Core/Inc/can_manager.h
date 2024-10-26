@@ -63,13 +63,13 @@ extern volatile uint16_t sg_rear;
 extern volatile uint16_t max_power;
 extern volatile int16_t voltage_x10;
 
-extern CAN_RxHeaderTypeDef RxHeader;
-extern uint8_t RxData[8];
+// extern CAN_RxHeaderTypeDef RxHeader;
+// extern uint8_t RxData[8];
 
-extern CAN_TxHeaderTypeDef   TxHeader;
-extern uint32_t              TxMailbox;
+// extern CAN_TxHeaderTypeDef   TxHeader;
+// extern uint32_t              TxMailbox;
 
-void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]);
+// void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]);
 void can_tx_vcu_state(CAN_HandleTypeDef *hcan);
 void can_tx_torque_request(CAN_HandleTypeDef *hcan);
 void can_tx_disable_MC(CAN_HandleTypeDef *hcan);

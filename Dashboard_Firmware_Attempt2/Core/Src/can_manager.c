@@ -32,9 +32,10 @@ volatile uint16_t sg_rear = 0;
 volatile uint16_t max_power = 0;
 volatile int16_t voltage_x10 = 0;
 
-CAN_RxHeaderTypeDef RxHeader;
-uint8_t RxData[8];
+static CAN_RxHeaderTypeDef RxHeader;
+static uint8_t RxData[8];
 
+static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]);
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
@@ -45,26 +46,28 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
 /************ CAN RX ************/
 
-void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
+static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
     // gets message and updates values
-	switch (RxHeader.StdId) {
+	switch (rxHeader.StdId) {
 		case BMS_STATUS_MSG:
-			PACK_TEMP = RxData[0];
-			soc = RxData[1];
-			bms_status = (RxData[2] << 8);
-			bms_status += RxData[3];
-			pack_voltage = (RxData[4] << 8);
-			pack_voltage += RxData[5];
+			PACK_TEMP = rxData[0];
+			soc = rxData[1];
+			bms_status = (rxData[2] << 8);
+			bms_status += rxData[3];
+			pack_voltage = (rxData[4] << 8);
+			pack_voltage += rxData[5];
 
-			write_rx_to_sd();
+			sd_card_write_from_rx(rxHeader, rxData);
 			break;
 		case MC_VOLTAGE_INFO:
 			static uint8_t mc_voltage_msg_counter = 0;
 
-			capacitor_volt = (RxData[0] << 8); // upper bits
-			capacitor_volt += RxData[1]; // lower bits
+			capacitor_volt = (rxData[0] << 8); // upper bits
+			capacitor_volt += rxData[1]; // lower bits
 
-			if (mc_voltage_msg_counter == 0) write_rx_to_sd();
+			if (mc_voltage_msg_counter == 0)
+				sd_card_write_from_rx(rxHeader, rxData);
+
 			mc_voltage_msg_counter++;
 			mc_voltage_msg_counter %= 50;
 
@@ -72,27 +75,31 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 		case MC_INTERNAL_STATES:
 			static uint8_t mc_state_msg_counter = 0;
 
-			mc_lockout = RxData[6] & 0b1000000;
-			mc_enabled = RxData[6] & 0b1;
+			mc_lockout = rxData[6] & 0b1000000;
+			mc_enabled = rxData[6] & 0b1;
 
-			if (mc_state_msg_counter == 0) write_rx_to_sd();
+			if (mc_state_msg_counter == 0)
+				sd_card_write_from_rx(rxHeader, rxData);
+
 			mc_state_msg_counter++;
 			mc_state_msg_counter %= 50;
 
 			break;
 		case PEI_CURRENT_SHUTDOWN:
-			shutdown_flags = RxData[2];
-			write_rx_to_sd();
+			shutdown_flags = rxData[2];
+			sd_card_write_from_rx(rxHeader, rxData);
 			break;
 		case MC_FAULT_CODES:
 			static uint8_t mc_fault_msg_counter = 0;
 
-			if (mc_fault_msg_counter == 0) write_rx_to_sd();
-			mc_fault_msg_counter++;
+			if (mc_fault_msg_counter == 0)
+				sd_card_write_from_rx(rxHeader, rxData);
+
+			++mc_fault_msg_counter;
 			mc_fault_msg_counter %= 50;
 
-			for (uint8_t i = 0; i < 8; i++) {
-				if (RxData[i] > 0) {
+			for (uint8_t i = 0; i < 8; ++i) {
+				if (rxData[i] > 0) {
 					mc_fault = 1;
 					break;
 				}
@@ -104,95 +111,101 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 		case MC_PARAM_RESPONSE:
 			//static uint8_t mc_param_msg_counter = 0;
 
-			if (RxData[0] == 0x20 && RxData[2] == 1) {
+			if (rxData[0] == 0x20 && rxData[2] == 1) {
 				mc_fault_clear_success = 1;
 			}
 			break;
 //		case WHEEL_SPEED_REAR:
-//			rear_right_wheel_speed = (RxData[0] << 8);
-//			rear_right_wheel_speed += RxData[1];
-//			rear_left_wheel_speed = (RxData[2] << 8);
-//			rear_left_wheel_speed += RxData[3];
+//			rear_right_wheel_speed = (rxData[0] << 8);
+//			rear_right_wheel_speed += rxData[1];
+//			rear_left_wheel_speed = (rxData[2] << 8);
+//			rear_left_wheel_speed += rxData[3];
 //			wheel_updated[1] = 1;
 //			telem_id = 0;
 //			break;
 		case MC_MOTOR_POSITION:
 			static uint8_t mc_motor_pos_msg_counter = 0;
 
-			motor_speed = (RxData[3] << 8);
-			motor_speed |= RxData[2];
+			motor_speed = (rxData[3] << 8);
+			motor_speed |= rxData[2];
 			motor_speed *= -1;
 
 			// TEMPORARY?
-			rear_right_wheel_speed = (RxData[3] << 8);
-			rear_right_wheel_speed += RxData[2];
+			rear_right_wheel_speed = (rxData[3] << 8);
+			rear_right_wheel_speed += rxData[2];
 			rear_right_wheel_speed *= -1;
 			wheel_updated[1] = 1;
 			telem_id = 0;
 
-			if (mc_motor_pos_msg_counter == 0) write_rx_to_sd();
-			mc_motor_pos_msg_counter++;
+			if (mc_motor_pos_msg_counter == 0)
+				sd_card_write_from_rx(rxHeader, rxData);
+
+			++mc_motor_pos_msg_counter;
 			mc_motor_pos_msg_counter %= 10;
 
 			break;
 		case COOLING_LOOP:
-			inlet_temp = (RxData[0] << 8);
-			inlet_temp += RxData[1];
-			outlet_temp = (RxData[2] << 8);
-			outlet_temp += RxData[3];
-			inlet_pres = (RxData[4] << 8);
-			inlet_pres += RxData[5];
-			outlet_pres = (RxData[6] << 8);
-			outlet_pres += RxData[7];
+			inlet_temp = (rxData[0] << 8);
+			inlet_temp += rxData[1];
+			outlet_temp = (rxData[2] << 8);
+			outlet_temp += rxData[3];
+			inlet_pres = (rxData[4] << 8);
+			inlet_pres += rxData[5];
+			outlet_pres = (rxData[6] << 8);
+			outlet_pres += rxData[7];
 			telem_id = 1;
 
-			write_rx_to_sd();
+			sd_card_write_from_rx(rxHeader, rxData);
 			break;
 		case MC_TEMP_3:
 			static uint8_t motor_temp_msg_counter = 0;
 
-			motor_temp = RxData[5] << 8;
-			motor_temp += RxData[4];
+			motor_temp = rxData[5] << 8;
+			motor_temp += rxData[4];
 
-			if (motor_temp_msg_counter == 0) write_rx_to_sd();
-			motor_temp_msg_counter++;
+			if (motor_temp_msg_counter == 0)
+				sd_card_write_from_rx(rxHeader, rxData);
+			++motor_temp_msg_counter;
 			motor_temp_msg_counter %= 50;
 
 			break;
 		case MC_TEMP_1:
 			static uint8_t mc_temp_msg_counter = 0;
 
-			uint16_t module_a_temp = (RxData[1] << 8) + RxData[0];
-			uint16_t module_b_temp = (RxData[3] << 8) + RxData[2];
-			uint16_t module_c_temp = (RxData[5] << 8) + RxData[4];
+			uint16_t module_a_temp = (rxData[1] << 8) + rxData[0];
+			uint16_t module_b_temp = (rxData[3] << 8) + rxData[2];
+			uint16_t module_c_temp = (rxData[5] << 8) + rxData[4];
 			mc_temp = (module_a_temp + module_b_temp + module_c_temp) / 3; // no unit conversion, don't want to store float
 
-			if (mc_temp_msg_counter == 0) write_rx_to_sd();
-			mc_temp_msg_counter++;
+			if (mc_temp_msg_counter == 0)
+				sd_card_write_from_rx(rxHeader, rxData);
+			++mc_temp_msg_counter;
 			mc_temp_msg_counter %= 50;
 
 			break;
 		case MC_INTERNAL_VOLTS:
 			static uint8_t mc_glv_msg_counter = 0;
 
-			glv_v = RxData[7] << 8;
-			glv_v += RxData[6]; // no unit conversion, don't want to store float
+			glv_v = rxData[7] << 8;
+			glv_v += rxData[6]; // no unit conversion, don't want to store float
 
-			if (mc_glv_msg_counter == 0) write_rx_to_sd();
-			mc_glv_msg_counter++;
+			if (mc_glv_msg_counter == 0)
+				sd_card_write_from_rx(rxHeader, rxData);
+
+			++mc_glv_msg_counter;
 			mc_glv_msg_counter %= 100;
 
 			break;
 		case MC_INTERNAL_CURRENTS:
-			int16_t current_x10 = (RxData[7] << 8) + RxData[6];
+			int16_t current_x10 = (rxData[7] << 8) + rxData[6];
 			if(capacitor_volt > 0 && current_x10 > 0){
 				uint16_t power = (capacitor_volt / 10) * (current_x10 / 10) / 1000;
 				if(power > max_power) max_power = power;
 			}
 			break;
 		case STRAIN_GAUGE_REAR:
-			sg_rear = RxData[0] << 8;
-			sg_rear += RxData[1];
+			sg_rear = rxData[0] << 8;
+			sg_rear += rxData[1];
 			break;
 		default:
 			// no valid input received
@@ -204,8 +217,8 @@ void save_can_rx_data(CAN_RxHeaderTypeDef RxHeader, uint8_t RxData[]) {
 
 /************ CAN TX ************/
 
-CAN_TxHeaderTypeDef   TxHeader;
-uint32_t              TxMailbox;
+static CAN_TxHeaderTypeDef   TxHeader;
+static uint32_t              TxMailbox;
 
 //  transmit state
 void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
@@ -227,7 +240,9 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 		tick & 0xFF
     };
 
-	if (vcu_state_msg_counter == 0) write_tx_to_sd(TxHeader, data_tx_state);
+	if (vcu_state_msg_counter == 0)
+		sd_card_write_from_tx(TxHeader, data_tx_state);
+
 	vcu_state_msg_counter++;
 	vcu_state_msg_counter %= 50;
 
@@ -269,7 +284,9 @@ void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc){
 		TC_torque_req & 0xff,
     };
 
-	if (tc_sg_msg_counter == 0) write_tx_to_sd(TxHeader, data_tx_state);
+	if (tc_sg_msg_counter == 0)
+		sd_card_write_from_tx(TxHeader, data_tx_state);
+
 	tc_sg_msg_counter++;
 	tc_sg_msg_counter %= 2;
 
@@ -308,8 +325,10 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
         0 // 7 - torque limit upper (if 0, default EEPROM value used)
     };
 
-    if (torque_request_msg_counter == 0) write_tx_to_sd(TxHeader, data_tx_torque);
-	torque_request_msg_counter++;
+    if (torque_request_msg_counter == 0)
+    	sd_card_write_from_tx(TxHeader, data_tx_torque);
+
+    torque_request_msg_counter++;
 	torque_request_msg_counter %= 2;
 
     if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data_tx_torque, &TxMailbox) != HAL_OK)

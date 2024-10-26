@@ -1258,21 +1258,24 @@ void SDCardEntry(void *argument)
 {
   /* USER CODE BEGIN SDCardEntry */
 
-	int res = mount_sd_card();
-	if (!res) {
+	SD_CARD_MOUNT_RESULT res = sd_card_mount();
+	if (res != SD_CARD_MOUNT_RESULT_SUCCESS) {
 		// FAILED TO MOUNT SD CARD!
 		osThreadTerminate(osThreadGetId());
 	}
-  /* Infinite loop */
-  for(;;)
-  {
-    //osDelay(100);
-    sd_card_write();
-  }
 
-  // In case we accidentally leave the infinite loop
-  osThreadTerminate(osThreadGetId());
-  /* USER CODE END SDCardEntry */
+	/* Infinite loop */
+	while (1)
+	{
+		//osDelay(100);
+		// sd_card_write_sync();
+		sd_card_write_async();
+	}
+
+	/* In case we accidentally leave the infinite loop */
+	sd_card_flush();
+	osThreadTerminate(osThreadGetId());
+	/* USER CODE END SDCardEntry */
 }
 
 /**

@@ -11,27 +11,28 @@
 #define BUFLEN 8192
 #define MAX_STRLEN 500
 
+#define MAX_ASYNC_WRITES 3
+
 extern FATFS SDFatFS;
 extern FIL SDFile;
 
-char buffer[BUFLEN];
-uint32_t ind = 0;
-uint32_t index_top = 0;
-UINT byteswritten;
-
-
 extern CAN_HandleTypeDef hcan1;
-extern CAN_RxHeaderTypeDef RxHeader;
-extern uint8_t RxData[8];
 
+static char buffer[BUFLEN];
+static uint32_t ind = 0;
+static uint32_t index_top = 0;
 
-int mount_sd_card(void) {
+static UINT bytes_written = 0;
+static uint32_t last_write_index = 0;
+
+SD_CARD_MOUNT_RESULT sd_card_mount(void) {
   	 FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
-  	 if (res != FR_OK) return 0;
+  	 if (res != FR_OK)
+  		 return SD_CARD_MOUNT_RESULT_FAILED;
 
   	 char filename[20];
 
-  	 // name the file, increment until filename has'nt been taken
+  	 /* name the file, increment until filename hasn't been taken */
   	 uint8_t num = 0;
   	 while (1) {
   		  FIL F1;
@@ -40,59 +41,85 @@ int mount_sd_card(void) {
 
   		  FRESULT f_open_status = f_open(&F1, filename, FA_READ);
 
-  		  // if found filename thats not taken, use it
+  		  /* if found filename thats not taken, use it */
   		  if (f_open_status == FR_NO_FILE) {
   			  f_close(&F1);
   			  break;
   		  }
-  		  num++;
 
+  		  ++num;
   		  f_close(&F1);
   	 }
 
 	 res = f_open(&SDFile, filename,  FA_OPEN_APPEND | FA_OPEN_ALWAYS | FA_WRITE);
-	 if(res == FR_OK){
-		 return 1;
-	 }
-	 return 0;
+	 return (res == FR_OK) ? SD_CARD_MOUNT_RESULT_SUCCESS : SD_CARD_MOUNT_RESULT_FAILED;
 }
 
-void write_data_record(uint32_t id, uint8_t data[8]){
-	int tick = HAL_GetTick();
+void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
+	UINT tick = HAL_GetTick();
 
 	// make sure we don't reach the end of the buffer
-	if((ind + MAX_STRLEN) >= BUFLEN){
+	if((ind + MAX_STRLEN) >= BUFLEN) {
 		index_top = ind;
 		ind = 0;
 	}
 
-	int bytes = sprintf(&buffer[ind], "%lX,%x,%x,%x,%x,%x,%x,%x,%x,%x\n", id, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], tick);
+	int bytes = sprintf(&buffer[ind], "%lX,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
+			id, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], tick);
 	ind += bytes;
 }
 
-void write_rx_to_sd(void){
-	write_data_record(RxHeader.StdId, RxData);
+void sd_card_write_from_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
+	sd_card_write_data_record(rxHeader.StdId, rxData);
 }
 
-void write_tx_to_sd(CAN_TxHeaderTypeDef TxHeader, uint8_t TxData[]){
-	write_data_record(TxHeader.StdId, TxData);
+void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
+	sd_card_write_data_record(txHeader.StdId, txData);
 }
 
-void sd_card_write(void){
-	static uint32_t last_write_index = 0;
-
-	if(ind == last_write_index){
+void sd_card_write_sync(void) {
+	if(ind == last_write_index) {
 		return;
-	} else if(ind > last_write_index){
-		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &byteswritten);
-	} else { // index < last_write_index
-		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &byteswritten);
-		f_write(&SDFile, buffer, ind, &byteswritten);
+	} else if(ind > last_write_index) {
+		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &bytes_written);
+	} else {
+		/* index < last_write_index */
+		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &bytes_written);
+		f_write(&SDFile, buffer, ind, &bytes_written);
 	}
 
-	f_sync(&SDFile); // sync less often?
+	sd_card_flush();
 	last_write_index = ind;
 
-	//TODO: compare byteswritten to expected value?
+	//TODO: compare bytes_written to expected value?
 	//TODO: check results of write operations
+}
+
+void sd_card_write_async(void) {
+	static uint32_t num_async_writes = 0;
+
+	if(ind == last_write_index) {
+		return;
+	} else if(ind > last_write_index) {
+		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &bytes_written);
+	} else {
+		/* index < last_write_index */
+		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &bytes_written);
+		f_write(&SDFile, buffer, ind, &bytes_written);
+	}
+
+	/* If we've gone too long without syncing, force a flush */
+	++num_async_writes;
+	if (num_async_writes == MAX_ASYNC_WRITES) {
+		num_async_writes = 0;
+		sd_card_flush();
+	}
+	last_write_index = ind;
+
+	//TODO: compare bytes_written to expected value?
+	//TODO: check results of write operations
+}
+
+void sd_card_flush(void) {
+	f_sync(&SDFile);
 }
