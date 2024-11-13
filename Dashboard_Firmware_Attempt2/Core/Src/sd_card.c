@@ -10,7 +10,7 @@
 #include "semphr.h"
 
 #define BUFLEN 8192
-#define MAX_STRLEN 500
+#define MAX_STRLEN 512
 
 #define MAX_ASYNC_WRITES 3
 
@@ -18,11 +18,7 @@ extern FATFS SDFatFS;
 extern FIL SDFile;
 
 static char buffer[BUFLEN];
-static uint32_t ind = 0;
-static uint32_t index_top = 0;
-
-static UINT bytes_written = 0;
-static uint32_t last_write_index = 0;
+static uint32_t buffer_size = 0;
 
 static SemaphoreHandle_t sd_mutex = NULL;
 static StaticSemaphore_t sd_mutex_buffer;
@@ -70,19 +66,22 @@ SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 }
 
 void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
-	UINT tick = HAL_GetTick();
-
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	// make sure we don't reach the end of the buffer
-	if ((ind + MAX_STRLEN) >= BUFLEN) {
-		index_top = ind;
-		ind = 0;
+	if ((buffer_size + MAX_STRLEN) >= BUFLEN) {
+		sd_card_write_buffer();
 	}
 
-	int bytes = sprintf(&buffer[ind], "%lX,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
-			id, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], tick);
-	ind += bytes;
+	// Consider LUT?
+	int bytes = sprintf(&buffer[buffer_size], "%lX,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
+			id,
+			data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
+			(UINT)(HAL_GetTick()));
+	// TODO: Consider use of LUT
+	// TODO: Binary format?
+
+	buffer_size += bytes;
 
 	xSemaphoreGive(sd_mutex);
 }
@@ -131,19 +130,20 @@ static void sd_card_flush_internal(void) {
 }
 
 static void sd_card_write_buffer(void) {
-	if (ind == last_write_index) {
-		return;
-	} else if (ind > last_write_index) {
-		f_write(&SDFile, buffer + last_write_index, (ind - last_write_index), &bytes_written);
-	} else {
-		/* index < last_write_index */
-		f_write(&SDFile, buffer + last_write_index, (index_top - last_write_index), &bytes_written);
-		f_write(&SDFile, buffer, ind, &bytes_written);
-	}
+	static UINT bytes_written = 0;
 
-	last_write_index = ind;
+	if (buffer_size == 0) return;
+
+	f_write(&SDFile, buffer, buffer_size, &bytes_written);
+
 	++writes_since_flush;
 
-	//TODO: compare bytes_written to expected value?
-	//TODO: check results of write operations
+#ifdef DEBUG
+	if (bytes_written != buffer_size) {
+		// TODO: mark error
+	}
+#endif
+
+	buffer_size = 0;
+
 }
