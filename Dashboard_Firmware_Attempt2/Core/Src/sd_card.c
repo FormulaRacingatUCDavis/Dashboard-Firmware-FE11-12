@@ -10,7 +10,7 @@
 #include "semphr.h"
 
 #define BUFLEN 8192
-#define MAX_STRLEN 512
+#define ENTRY_SIZE (4 + 8 + 4)
 
 #define MAX_ASYNC_WRITES 3
 
@@ -25,8 +25,21 @@ static StaticSemaphore_t sd_mutex_buffer;
 
 static uint32_t writes_since_flush = 0;
 
+/*
+ * SD Card data is usually stored in .biscuit files,
+ * which can be trivially converted to plaintext for further
+ * analysis.
+ */
+
+typedef struct _BiscuitHeader_t {
+	uint32_t magic; // Should equal 0xB155CC17
+	uint16_t version; // Should equal 1 for now
+	uint16_t padding; // Not needed
+} BiscuitHeader_t;
+
 static void sd_card_flush_internal(void);
-static void sd_card_write_buffer(void);
+static void sd_card_write_from_buffer(void);
+static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count);
 
 SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 	sd_mutex = sd_mutex ? sd_mutex : xSemaphoreCreateMutexStatic(&sd_mutex_buffer);
@@ -58,6 +71,17 @@ SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 	  	 }
 
 		 res = f_open(&SDFile, filename,  FA_OPEN_APPEND | FA_OPEN_ALWAYS | FA_WRITE);
+		 if (res == FR_OK) {
+			 // Write the header
+			 BiscuitHeader_t header = {
+					 .magic = 0xB155CC17,
+					 .version = 1,
+					 .padding = 0
+			 };
+			 sd_card_write_data_bytes((uint8_t*)(&header), sizeof(header));
+			 sd_card_write_from_buffer(); // Write out immediately
+			 sd_card_flush_internal();
+		 }
 	}
 
 	xSemaphoreGive(sd_mutex);
@@ -66,22 +90,33 @@ SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 }
 
 void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
+	uint32_t tick;
+
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	// make sure we don't reach the end of the buffer
-	if ((buffer_size + MAX_STRLEN) >= BUFLEN) {
-		sd_card_write_buffer();
+	if ((buffer_size + ENTRY_SIZE) >= BUFLEN) {
+		sd_card_write_from_buffer();
 	}
 
-	// Consider LUT?
-	int bytes = sprintf(&buffer[buffer_size], "%lX,%x,%x,%x,%x,%x,%x,%x,%x,%x\n",
-			id,
-			data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
-			(UINT)(HAL_GetTick()));
-	// TODO: Consider use of LUT
-	// TODO: Binary format?
+	// Write the ids
+	buffer[buffer_size] = id & 0xFF;
+	buffer[buffer_size + 1] = (id >> 8) & 0xFF;
+	buffer[buffer_size + 2] = (id >> 16) & 0xFF;
+	buffer[buffer_size + 3] = (id >> 24) & 0xFF;
 
-	buffer_size += bytes;
+	// Now write the data
+	for (int32_t i = 0; i < 8; ++i)
+		buffer[buffer_size + 4 + i] = data[i];
+
+	// Now write the tick
+	tick = HAL_GetTick();
+	buffer[buffer_size + 12] = tick & 0xFF;
+	buffer[buffer_size + 13] = (tick >> 8) & 0xFF;
+	buffer[buffer_size + 14] = (tick >> 16) & 0xFF;
+	buffer[buffer_size + 15] = (tick >> 24) & 0xFF;
+
+	buffer_size += ENTRY_SIZE;
 
 	xSemaphoreGive(sd_mutex);
 }
@@ -94,19 +129,19 @@ void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
 	sd_card_write_data_record(txHeader.StdId, txData);
 }
 
-void sd_card_write_sync(void) {
+void sd_card_update_sync(void) {
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
-	sd_card_write_buffer();
+	sd_card_write_from_buffer();
 	sd_card_flush_internal();
 
 	xSemaphoreGive(sd_mutex);
 }
 
-void sd_card_write_async(void) {
+void sd_card_update_async(void) {
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
-	sd_card_write_buffer();
+	sd_card_write_from_buffer();
 
 	/* If we've gone too long without syncing, force a flush */
 	if (writes_since_flush == MAX_ASYNC_WRITES) {
@@ -129,7 +164,17 @@ static void sd_card_flush_internal(void) {
 	writes_since_flush = 0;
 }
 
-static void sd_card_write_buffer(void) {
+static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
+	// make sure we don't reach the end of the buffer
+	if ((buffer_size + count) >= BUFLEN) {
+		sd_card_write_from_buffer();
+	}
+
+	memcpy(buffer, bytes, count);
+	buffer_size += count;
+}
+
+static void sd_card_write_from_buffer(void) {
 	static UINT bytes_written = 0;
 
 	if (buffer_size == 0) return;

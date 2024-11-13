@@ -1269,7 +1269,7 @@ void SDCardEntry(void *argument)
 	{
 		osDelay(3);
 		// sd_card_write_sync();
-		sd_card_write_async();
+		sd_card_update_async();
 	}
 
 	/* In case we accidentally leave the infinite loop */
