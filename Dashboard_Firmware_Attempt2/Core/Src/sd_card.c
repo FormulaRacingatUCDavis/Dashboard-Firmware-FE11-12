@@ -8,6 +8,7 @@
 #include "sd_card.h"
 #include "stdio.h"
 #include "semphr.h"
+#include <string.h>
 
 #define BUFLEN 8192
 #define ENTRY_SIZE (4 + 8 + 4)
@@ -173,7 +174,7 @@ static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
 		sd_card_write_from_buffer();
 	}
 
-	memcpy(buffer, bytes, count);
+	memcpy(buffer + buffer_size, bytes, count);
 	buffer_size += count;
 }
 
