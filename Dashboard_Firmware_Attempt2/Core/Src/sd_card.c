@@ -26,8 +26,6 @@ static uint32_t buffer_size = 0;
 static SemaphoreHandle_t sd_mutex = NULL;
 static StaticSemaphore_t sd_mutex_buffer;
 
-static uint32_t writes_since_flush = 0;
-
 /*
  * SD Card data is usually stored in .biscuit files,
  * which can be trivially converted to plaintext for further
@@ -142,13 +140,17 @@ void sd_card_update_sync(void) {
 }
 
 void sd_card_update_async(void) {
+	static uint32_t writes_since_flush = 0;
+
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	sd_card_write_from_buffer();
+	++writes_since_flush;
 
 	/* If we've gone too long without syncing, force a flush */
 	if (writes_since_flush == MAX_ASYNC_WRITES) {
 		sd_card_flush_internal();
+		writes_since_flush = 0;
 	}
 
 	xSemaphoreGive(sd_mutex);
@@ -164,7 +166,6 @@ void sd_card_flush(void) {
 /* Only to be used if mutex is active. */
 static void sd_card_flush_internal(void) {
 	f_sync(&SDFile);
-	writes_since_flush = 0;
 }
 
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
@@ -183,8 +184,6 @@ static void sd_card_write_from_buffer(void) {
 	if (buffer_size == 0) return;
 
 	f_write(&SDFile, buffer, buffer_size, &bytes_written);
-
-	++writes_since_flush;
 
 #ifdef SD_CARD_CHECK_WRITEOUT
 	if (bytes_written != buffer_size) {
