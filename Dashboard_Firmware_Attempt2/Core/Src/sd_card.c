@@ -14,6 +14,9 @@
 
 #define MAX_ASYNC_WRITES 3
 
+// Uncomment this to check whether we've written the correct number of bytes
+// #define SD_CARD_CHECK_WRITEOUT 1
+
 extern FATFS SDFatFS;
 extern FIL SDFile;
 
@@ -56,7 +59,7 @@ SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 	  	 while (1) {
 	  		  FIL F1;
 
-	  		  sprintf(filename, "run_%u.txt", num);
+	  		  sprintf(filename, "run_%u.biscuit", num);
 
 	  		  FRESULT f_open_status = f_open(&F1, filename, FA_READ);
 
@@ -183,7 +186,7 @@ static void sd_card_write_from_buffer(void) {
 
 	++writes_since_flush;
 
-#ifdef DEBUG
+#ifdef SD_CARD_CHECK_WRITEOUT
 	if (bytes_written != buffer_size) {
 		// TODO: mark error
 	}
