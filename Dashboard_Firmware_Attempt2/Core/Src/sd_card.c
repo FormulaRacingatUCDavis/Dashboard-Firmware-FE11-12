@@ -107,8 +107,7 @@ void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
 	buffer[buffer_size + 3] = (id >> 24) & 0xFF;
 
 	// Now write the data
-	for (int32_t i = 0; i < 8; ++i)
-		buffer[buffer_size + 4 + i] = data[i];
+	memcpy(buffer + buffer_size + 4, data, 8);
 
 	// Now write the tick
 	tick = HAL_GetTick();
