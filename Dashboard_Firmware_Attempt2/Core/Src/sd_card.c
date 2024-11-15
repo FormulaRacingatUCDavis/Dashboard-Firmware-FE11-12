@@ -6,8 +6,8 @@
  */
 
 #include "sd_card.h"
-#include "stdio.h"
-#include "semphr.h"
+
+#include <stdio.h>
 #include <string.h>
 
 #define BUFLEN 8192
@@ -25,7 +25,6 @@ static char buffer[BUFLEN];
 static uint32_t buffer_size = 0;
 
 static SemaphoreHandle_t sd_mutex = NULL;
-static StaticSemaphore_t sd_mutex_buffer;
 
 /*
  * SD Card data is usually stored in .biscuit files,
@@ -43,12 +42,10 @@ static void sd_card_flush_internal(void);
 static void sd_card_write_from_buffer(void);
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count);
 
-SD_CARD_MOUNT_RESULT sd_card_mount(void) {
-	sd_mutex = sd_mutex ? sd_mutex : xSemaphoreCreateMutexStatic(&sd_mutex_buffer);
-	if (!sd_mutex)
-		return SD_CARD_MOUNT_RESULT_FAILED;
+SD_CARD_MOUNT_RESULT sd_card_mount(SemaphoreHandle_t mutex) {
+	xSemaphoreTake(mutex, portMAX_DELAY);
+	sd_mutex = mutex;
 
-	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 	FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
 	if (res == FR_OK) {
 		char filename[20];
@@ -94,6 +91,8 @@ SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
 	uint32_t tick;
 
+	if (!sd_mutex) return;
+
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	// make sure we don't reach the end of the buffer
@@ -131,6 +130,8 @@ void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
 }
 
 void sd_card_update_sync(void) {
+	if (!sd_mutex) return;
+
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	sd_card_write_from_buffer();
@@ -141,6 +142,8 @@ void sd_card_update_sync(void) {
 
 void sd_card_update_async(void) {
 	static uint32_t writes_since_flush = 0;
+
+	if (!sd_mutex) return;
 
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
@@ -158,6 +161,8 @@ void sd_card_update_async(void) {
 
 /* Public variant, locks mutex */
 void sd_card_flush(void) {
+	if (!sd_mutex) return;
+
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 	sd_card_flush_internal();
 	xSemaphoreGive(sd_mutex);

@@ -35,6 +35,7 @@
 #include "telem.h"
 #include "xsens.h"
 #include "driver_input.h"
+#include "semphr.h"
 
 
 /* USER CODE END Includes */
@@ -147,6 +148,9 @@ WheelSpeed_t front_left_wheel_speed_t;
 
 uint16_t sg_adc;
 
+static SemaphoreHandle_t sd_mutex = NULL;
+static StaticSemaphore_t sd_mutex_buffer;
+
 // TEST END
 
 /* USER CODE END 0 */
@@ -205,10 +209,12 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
+  sd_mutex = xSemaphoreCreateMutexStatic(&sd_mutex_buffer);
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -1258,11 +1264,15 @@ void SDCardEntry(void *argument)
 {
   /* USER CODE BEGIN SDCardEntry */
 
-	SD_CARD_MOUNT_RESULT res = sd_card_mount();
+	SD_CARD_MOUNT_RESULT res = sd_card_mount(sd_mutex);
 	if (res != SD_CARD_MOUNT_RESULT_SUCCESS) {
 		// FAILED TO MOUNT SD CARD!
 		osThreadTerminate(osThreadGetId());
 	}
+
+	// TODO: Remove after done testing (only adds one entry)
+	uint8_t bytes[] = { 0x01, 0x02, 0x04, 0x08, 0x0F, 0x10, 0x20, 0x40 };
+	sd_card_write_data_record(0x7E57, bytes);
 
 	/* Infinite loop */
 	while (1)
