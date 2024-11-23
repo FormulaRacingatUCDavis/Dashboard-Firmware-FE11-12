@@ -148,8 +148,8 @@ WheelSpeed_t front_left_wheel_speed_t;
 
 uint16_t sg_adc;
 
-static SemaphoreHandle_t sd_mutex = NULL;
-static StaticSemaphore_t sd_mutex_buffer;
+//static SemaphoreHandle_t sd_mutex = NULL;
+//static StaticSemaphore_t sd_mutex_buffer;
 
 // TEST END
 
@@ -214,7 +214,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
-  sd_mutex = xSemaphoreCreateMutexStatic(&sd_mutex_buffer);
+  // sd_mutex = xSemaphoreCreateMutexStatic(&sd_mutex_buffer);
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -1264,7 +1264,7 @@ void SDCardEntry(void *argument)
 {
   /* USER CODE BEGIN SDCardEntry */
 
-	SD_CARD_MOUNT_RESULT res = sd_card_mount(sd_mutex);
+	sd_card_mount_result_t res = sd_card_mount(NULL);
 	if (res != SD_CARD_MOUNT_RESULT_SUCCESS) {
 		// FAILED TO MOUNT SD CARD!
 		osThreadTerminate(osThreadGetId());
@@ -1272,18 +1272,18 @@ void SDCardEntry(void *argument)
 
 	// TODO: Remove after done testing (only adds one entry)
 	uint8_t bytes[] = { 0x01, 0x02, 0x04, 0x08, 0x0F, 0x10, 0x20, 0x40 };
-	sd_card_write_data_record(0x7E57, bytes);
+	sd_card_write_data(0x7E57, bytes);
 
 	/* Infinite loop */
 	while (1)
 	{
-		osDelay(3);
-		// sd_card_write_sync();
-		sd_card_update_async();
+		// osDelay(3);
+		// sd_card_flush_writes_sync();
+		sd_card_flush_writes_sync();
 	}
 
 	/* In case we accidentally leave the infinite loop */
-	sd_card_flush();
+	sd_card_sync_filesystem();
 	osThreadTerminate(osThreadGetId());
 	/* USER CODE END SDCardEntry */
 }

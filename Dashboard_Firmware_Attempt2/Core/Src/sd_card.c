@@ -15,16 +15,16 @@
 
 #define MAX_ASYNC_WRITES 3
 
-// Uncomment this to check whether we've written the correct number of bytes
-// #define SD_CARD_CHECK_WRITEOUT 1
+// Uncomment this to enable debugging information for sd card functionality.
+// #define SD_CARD_DEBUG 1
 
 extern FATFS SDFatFS;
 extern FIL SDFile;
 
-static char buffer[BUFLEN];
+static uint8_t buffer[BUFLEN];
 static uint32_t buffer_size = 0;
 
-static SemaphoreHandle_t sd_mutex = NULL;
+//static SemaphoreHandle_t sd_mutex = NULL;
 
 /*
  * SD Card data is usually stored in .biscuit files,
@@ -32,68 +32,67 @@ static SemaphoreHandle_t sd_mutex = NULL;
  * analysis.
  */
 
-typedef struct _BiscuitHeader_t {
+typedef struct {
 	uint32_t magic; // Should equal 0xB155CC17
 	uint16_t version; // Should equal 1 for now
 	uint16_t padding; // Not needed
-} BiscuitHeader_t;
+} biscuit_header_t;
 
-static void sd_card_flush_internal(void);
+static void sd_card_sync_filesystem_internal(void);
 static void sd_card_write_from_buffer(void);
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count);
 
-SD_CARD_MOUNT_RESULT sd_card_mount(SemaphoreHandle_t mutex) {
-	xSemaphoreTake(mutex, portMAX_DELAY);
-	sd_mutex = mutex;
+sd_card_mount_result_t sd_card_mount(SemaphoreHandle_t mutex) {
+	char filename[20];
+	// xSemaphoreTake(mutex, portMAX_DELAY);
+	//sd_mutex = mutex;
 
 	FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
 	if (res == FR_OK) {
-		char filename[20];
-
 		/* name the file, increment until filename hasn't been taken */
-	  	 uint8_t num = 0;
-	  	 while (1) {
-	  		  FIL F1;
+	  	uint8_t num = 0;
+	  	while (1) {
+	  		FIL F1;
 
-	  		  sprintf(filename, "run_%u.biscuit", num);
+	  		sprintf(filename, "bun_%u.txt", num);
 
-	  		  FRESULT f_open_status = f_open(&F1, filename, FA_READ);
+	  		FRESULT f_open_status = f_open(&F1, filename, FA_READ);
 
-	  		  /* if found filename thats not taken, use it */
-	  		  if (f_open_status == FR_NO_FILE) {
-	  			  f_close(&F1);
-	  			  break;
-	  		  }
+	  		/* if found filename thats not taken, use it */
+	  		if (f_open_status == FR_NO_FILE) {
+	  			f_close(&F1);
+	  			break;
+	  		}
 
-	  		  ++num;
-	  		  f_close(&F1);
+	  		++num;
+	  		f_close(&F1);
 	  	 }
 
 		 res = f_open(&SDFile, filename,  FA_OPEN_APPEND | FA_OPEN_ALWAYS | FA_WRITE);
 		 if (res == FR_OK) {
 			 // Write the header
-			 BiscuitHeader_t header = {
+			 biscuit_header_t header = {
 					 .magic = 0xB155CC17,
 					 .version = 1,
 					 .padding = 0
 			 };
 			 sd_card_write_data_bytes((uint8_t*)(&header), sizeof(header));
 			 sd_card_write_from_buffer(); // Write out immediately
-			 sd_card_flush_internal();
+			 sd_card_sync_filesystem_internal();
 		 }
 	}
 
-	xSemaphoreGive(sd_mutex);
+	// xSemaphoreGive(sd_mutex);
 
 	return (res == FR_OK) ? SD_CARD_MOUNT_RESULT_SUCCESS : SD_CARD_MOUNT_RESULT_FAILED;
 }
 
-void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
+void sd_card_write_data(uint32_t id, uint8_t data[]) {
 	uint32_t tick;
 
-	if (!sd_mutex) return;
+	//if (!sd_mutex) return;
 
-	xSemaphoreTake(sd_mutex, portMAX_DELAY);
+	//xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	// make sure we don't reach the end of the buffer
 	if ((buffer_size + ENTRY_SIZE) >= BUFLEN) {
@@ -118,58 +117,58 @@ void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
 
 	buffer_size += ENTRY_SIZE;
 
-	xSemaphoreGive(sd_mutex);
+	//xSemaphoreGive(sd_mutex);
 }
 
-void sd_card_write_from_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
-	sd_card_write_data_record(rxHeader.StdId, rxData);
+void sd_card_write_can_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
+	// sd_card_write_data(rxHeader.StdId, rxData);
 }
 
-void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
-	sd_card_write_data_record(txHeader.StdId, txData);
+void sd_card_write_can_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
+	// sd_card_write_data(txHeader.StdId, txData);
 }
 
-void sd_card_update_sync(void) {
-	if (!sd_mutex) return;
+void sd_card_flush_writes_sync(void) {
+	//if (!sd_mutex) return;
 
-	xSemaphoreTake(sd_mutex, portMAX_DELAY);
+	//xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	sd_card_write_from_buffer();
-	sd_card_flush_internal();
+	sd_card_sync_filesystem_internal();
 
-	xSemaphoreGive(sd_mutex);
+	//xSemaphoreGive(sd_mutex);
 }
 
-void sd_card_update_async(void) {
+void sd_card_flush_writes_async(void) {
 	static uint32_t writes_since_flush = 0;
 
-	if (!sd_mutex) return;
+	//if (!sd_mutex) return;
 
-	xSemaphoreTake(sd_mutex, portMAX_DELAY);
+	//xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
 	sd_card_write_from_buffer();
 	++writes_since_flush;
 
 	/* If we've gone too long without syncing, force a flush */
 	if (writes_since_flush == MAX_ASYNC_WRITES) {
-		sd_card_flush_internal();
+		sd_card_sync_filesystem_internal();
 		writes_since_flush = 0;
 	}
 
-	xSemaphoreGive(sd_mutex);
+	//xSemaphoreGive(sd_mutex);
 }
 
 /* Public variant, locks mutex */
-void sd_card_flush(void) {
-	if (!sd_mutex) return;
+void sd_card_sync_filesystem(void) {
+	//if (!sd_mutex) return;
 
-	xSemaphoreTake(sd_mutex, portMAX_DELAY);
-	sd_card_flush_internal();
-	xSemaphoreGive(sd_mutex);
+	//xSemaphoreTake(sd_mutex, portMAX_DELAY);
+	sd_card_sync_filesystem_internal();
+	//xSemaphoreGive(sd_mutex);
 }
 
 /* Only to be used if mutex is active. */
-static void sd_card_flush_internal(void) {
+static void sd_card_sync_filesystem_internal(void) {
 	f_sync(&SDFile);
 }
 
@@ -190,7 +189,7 @@ static void sd_card_write_from_buffer(void) {
 
 	f_write(&SDFile, buffer, buffer_size, &bytes_written);
 
-#ifdef SD_CARD_CHECK_WRITEOUT
+#ifdef SD_CARD_DEBUG
 	if (bytes_written != buffer_size) {
 		// TODO: mark error
 	}
