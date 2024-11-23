@@ -41,7 +41,7 @@ static void sd_card_flush_internal(void);
 static void sd_card_write_from_buffer(void);
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count);
 
-SD_CARD_MOUNT_RESULT sd_card_mount(void) {
+sd_card_mount_result_t sd_card_mount(void) {
 	sd_mutex = sd_mutex ? sd_mutex : xSemaphoreCreateMutexStatic(&sd_mutex_buffer);
 	if (!sd_mutex)
 		return SD_CARD_MOUNT_RESULT_FAILED;
@@ -170,7 +170,7 @@ static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
 		sd_card_write_from_buffer();
 	}
 
-	memcpy(buffer, bytes, count);
+	memcpy(buffer + buffer_size, bytes, count);
 	buffer_size += count;
 }
 

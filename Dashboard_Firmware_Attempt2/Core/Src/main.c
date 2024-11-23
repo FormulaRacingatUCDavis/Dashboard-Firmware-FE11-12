@@ -1258,7 +1258,7 @@ void SDCardEntry(void *argument)
 {
   /* USER CODE BEGIN SDCardEntry */
 
-	SD_CARD_MOUNT_RESULT res = sd_card_mount();
+	sd_card_mount_result_t res = sd_card_mount();
 	if (res != SD_CARD_MOUNT_RESULT_SUCCESS) {
 		// FAILED TO MOUNT SD CARD!
 		osThreadTerminate(osThreadGetId());

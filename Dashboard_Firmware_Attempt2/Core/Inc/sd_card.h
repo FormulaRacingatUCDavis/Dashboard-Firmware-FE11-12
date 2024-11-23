@@ -4,12 +4,12 @@
 #include "fatfs.h"
 #include "stm32f7xx_hal.h"
 
-typedef enum _SD_CARD_MOUNT_RESULT {
+typedef enum {
 	SD_CARD_MOUNT_RESULT_SUCCESS = 0,
 	SD_CARD_MOUNT_RESULT_FAILED = 1,
-} SD_CARD_MOUNT_RESULT;
+} sd_card_mount_result_t;
 
-SD_CARD_MOUNT_RESULT sd_card_mount(void);
+sd_card_mount_result_t sd_card_mount(void);
 void sd_card_write_data_record(uint32_t id, uint8_t data[]);
 void sd_card_write_from_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]);
 void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]);
