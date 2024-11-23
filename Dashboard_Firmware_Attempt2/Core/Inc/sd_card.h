@@ -10,9 +10,9 @@ typedef enum {
 } sd_card_mount_result_t;
 
 sd_card_mount_result_t sd_card_mount(void);
-void sd_card_write_data_record(uint32_t id, uint8_t data[]);
-void sd_card_write_from_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]);
-void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]);
+void sd_card_write_data(uint32_t id, uint8_t data[]);
+void sd_card_write_can_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]);
+void sd_card_write_can_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]);
 void sd_card_update_sync(void);
 void sd_card_update_async(void);
 void sd_card_flush(void);
