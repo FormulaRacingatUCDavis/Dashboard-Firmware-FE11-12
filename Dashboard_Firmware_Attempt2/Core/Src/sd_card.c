@@ -2,12 +2,13 @@
  * sd_card.c
  *
  *  Created on: May 20, 2024
- *      Author: Abhineet
+ *      Author: Abhineet, IanKM
  */
 
 #include "sd_card.h"
 #include "stdio.h"
 #include "semphr.h"
+#include "string.h"
 
 #define BUFLEN 8192
 #define ENTRY_SIZE (4 + 8 + 4)
@@ -31,17 +32,17 @@ static uint32_t writes_since_flush = 0;
  * analysis.
  */
 
-typedef struct _BiscuitHeader_t {
+typedef struct {
 	uint32_t magic; // Should equal 0xB155CC17
 	uint16_t version; // Should equal 1 for now
 	uint16_t padding; // Not needed
-} BiscuitHeader_t;
+} biscuit_header_t;
 
 static void sd_card_flush_internal(void);
 static void sd_card_write_from_buffer(void);
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count);
 
-SD_CARD_MOUNT_RESULT sd_card_mount(void) {
+sd_card_mount_result_t sd_card_mount(void) {
 	sd_mutex = sd_mutex ? sd_mutex : xSemaphoreCreateMutexStatic(&sd_mutex_buffer);
 	if (!sd_mutex)
 		return SD_CARD_MOUNT_RESULT_FAILED;
@@ -73,7 +74,7 @@ SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 		 res = f_open(&SDFile, filename,  FA_OPEN_APPEND | FA_OPEN_ALWAYS | FA_WRITE);
 		 if (res == FR_OK) {
 			 // Write the header
-			 BiscuitHeader_t header = {
+			 biscuit_header_t header = {
 					 .magic = 0xB155CC17,
 					 .version = 1,
 					 .padding = 0
@@ -89,7 +90,7 @@ SD_CARD_MOUNT_RESULT sd_card_mount(void) {
 	return (res == FR_OK) ? SD_CARD_MOUNT_RESULT_SUCCESS : SD_CARD_MOUNT_RESULT_FAILED;
 }
 
-void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
+void sd_card_write_data(uint32_t id, uint8_t data[]) {
 	uint32_t tick;
 
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
@@ -121,12 +122,12 @@ void sd_card_write_data_record(uint32_t id, uint8_t data[]) {
 	xSemaphoreGive(sd_mutex);
 }
 
-void sd_card_write_from_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
-	sd_card_write_data_record(rxHeader.StdId, rxData);
+void sd_card_write_can_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
+	sd_card_write_data(rxHeader.StdId, rxData);
 }
 
-void sd_card_write_from_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
-	sd_card_write_data_record(txHeader.StdId, txData);
+void sd_card_write_can_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
+	sd_card_write_data(txHeader.StdId, txData);
 }
 
 void sd_card_update_sync(void) {
@@ -170,7 +171,7 @@ static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
 		sd_card_write_from_buffer();
 	}
 
-	memcpy(buffer, bytes, count);
+	memcpy(buffer + buffer_size, bytes, count);
 	buffer_size += count;
 }
 
