@@ -37,7 +37,7 @@ typedef enum {
 
 extern volatile uint8_t mc_lockout;
 extern volatile uint8_t mc_enabled;
-extern volatile int16_t capacitor_volt;
+extern volatile int16_t capacitor_volt_x10;
 extern volatile uint8_t shutdown_flags;
 extern volatile uint8_t estop_flags;
 extern volatile uint8_t switches;
@@ -61,7 +61,6 @@ extern volatile int16_t outlet_pres;
 extern volatile uint16_t telem_id;
 extern volatile uint16_t sg_rear;
 extern volatile uint16_t max_power;
-extern volatile int16_t voltage_x10;
 
 // extern CAN_RxHeaderTypeDef RxHeader;
 // extern uint8_t RxData[8];

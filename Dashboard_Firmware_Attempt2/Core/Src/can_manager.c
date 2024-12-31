@@ -5,7 +5,7 @@
 
 volatile uint8_t mc_lockout;
 volatile uint8_t mc_enabled;
-volatile int16_t capacitor_volt = 0;
+volatile int16_t capacitor_volt_x10 = 0;
 volatile uint8_t shutdown_flags = 0b0011111000;  //start with shutdown flags OK
 volatile uint8_t estop_flags = 0;
 volatile uint8_t switches = 0xC0;   //start with switches on to stay in startup state
@@ -30,7 +30,6 @@ volatile int16_t outlet_pres = 0;
 volatile uint16_t telem_id = 0;
 volatile uint16_t sg_rear = 0;
 volatile uint16_t max_power = 0;
-volatile int16_t voltage_x10 = 0;
 
 static CAN_RxHeaderTypeDef RxHeader;
 static uint8_t RxData[8];
@@ -62,8 +61,8 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 		case MC_VOLTAGE_INFO:
 			static uint8_t mc_voltage_msg_counter = 0;
 
-			capacitor_volt = (rxData[0] << 8); // upper bits
-			capacitor_volt += rxData[1]; // lower bits
+			capacitor_volt = (rxData[1] << 8); // upper bits
+			capacitor_volt += rxData[0]; // lower bits
 
 			if (mc_voltage_msg_counter == 0)
 				sd_card_write_can_rx(rxHeader, rxData);
