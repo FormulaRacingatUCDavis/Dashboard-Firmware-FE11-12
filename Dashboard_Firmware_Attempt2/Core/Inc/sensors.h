@@ -24,9 +24,6 @@
 #include "config.h"
 #include "fsm.h"
 
-// On the breadboard, the range of values for the potentiometer is 0 to 4095
-#define PEDAL_MAX 4095
-
 // There is some noise when reading from the brake pedal
 // So give some room for error when driver presses on brake
 #define BRAKE_ERROR_TOLERANCE 50

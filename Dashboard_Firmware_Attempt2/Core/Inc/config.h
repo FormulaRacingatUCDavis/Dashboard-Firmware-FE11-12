@@ -12,12 +12,9 @@
 
 #define PRECHARGE_THRESHOLD 4976 // 77V = 90% of nominal accumulator voltage, scaled from range of 0-12800(0V-200V)
 
-// On the breadboard, the range of values for the potentiometer is 0 to 4095
-#define PEDAL_MAX 4095
-
 //minimum calibration ranges
 #define APPS1_MIN_RANGE 500   //will not enter HV until pedal is calibrated
-#define APPS2_MIN_RNAGE 500
+#define APPS2_MIN_RANGE 500
 #define BRAKE_MIN_RANGE 50
 
 //in percent:

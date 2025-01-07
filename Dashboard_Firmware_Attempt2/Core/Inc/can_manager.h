@@ -4,11 +4,12 @@
  *  Created on: Feb 20, 2024
  *      Author: cogus
  */
-#include <stdint.h>
+
 
 #ifndef SRC_CAN_MANAGER_H_
 #define SRC_CAN_MANAGER_H_
 
+#include <stdint.h>
 #include "stm32f7xx_hal.h"
 #include "fsm.h"
 #include "sensors.h"
