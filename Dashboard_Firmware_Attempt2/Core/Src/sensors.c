@@ -14,10 +14,11 @@
 CALIBRATED_SENSOR_t throttle1;
 CALIBRATED_SENSOR_t throttle2;
 CALIBRATED_SENSOR_t brake;
-uint32_t torque_percentage = 100;
+uint32_t torque_percentage = 0;
 uint32_t torque_req = 0;
 
 #define RADS_PER_RPM 0.10472
+#define MAX_TORQUE_OVERTAKE (uint16_t)(MAX_TORQUE_NM * 0.8)
 
 extern volatile uint8_t traction_control_enabled;
 extern volatile int16_t motor_speed;
@@ -193,12 +194,16 @@ uint32_t get_max_power(){
 uint16_t get_max_torque(uint32_t max_power){
 	float motor_speed_rads = (float)motor_speed * RADS_PER_RPM;
 	float max_torque_power = max_power / motor_speed_rads;
-	float max_torque_knob = (float)(MAX_TORQUE_NM * torque_percentage / 100);
+	float max_torque_knob = MAX_TORQUE_NM * (float)torque_percentage / 100;
 
 	// return the lower of the torque limit set by the knob and by the power limit
-	if(max_torque_knob > max_torque_power){
+	if (max_torque_knob > max_torque_power) {
 		return (uint16_t)max_torque_power;
-	} else {
+	}
+	else if (is_button_enabled(OVERTAKE_BUTTON)) {
+		return MAX_TORQUE_OVERTAKE;
+	}
+	else {
 		return (uint16_t)max_torque_knob;
 	}
 }
