@@ -35,6 +35,7 @@
 #include "telem.h"
 #include "xsens.h"
 #include "driver_input.h"
+#include "ugui.h"
 
 
 /* USER CODE END Includes */
@@ -994,15 +995,12 @@ void MainEntry(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	// display
-	if (display_debug_enabled) {
-		Debug_Display_Update();
-	}
-	else {
-		Display_Update();
-	}
 
-	debug_enabled_update();
+	// driver input
+	driver_input_update();
+
+	// display
+	Display_Update();
 
 	// telem
 	telem_send();
@@ -1031,8 +1029,7 @@ void MainEntry(void *argument)
 	//UG_PutString(5, 250, sstr);
 
 	// traction control
-	traction_control_enabled_update();
-	if (traction_control_enabled) {
+	if (is_button_enabled(TC_BUTTON)) {
 		traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	}
 

@@ -7,6 +7,7 @@
 #include "sensors.h"
 #include "can_manager.h"
 #include "frucd_display.h"
+#include "driver_input.h"
 #include <stdlib.h>
 #include "traction_control.h"
 
@@ -169,7 +170,7 @@ uint16_t requested_throttle(){
     torque_req = (throttle2.percent * max_torque * 10) / 100;  //upscale for MC code, Nm times 10
 
     // use reduced values from TC if TC torque request is lower
-    if(traction_control_enabled && (torque_req > TC_torque_req)){
+    if(is_button_enabled(TC_BUTTON) && (torque_req > TC_torque_req)){
 		torque_req = TC_torque_req;
 	}
 
