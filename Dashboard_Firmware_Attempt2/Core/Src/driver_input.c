@@ -9,6 +9,7 @@
 #include "stm32f7xx_hal.h"
 #include "frucd_display.h"
 #include "ugui.h"
+#include "sd_card.h"
 
 #define NUM_BUTTONS 6
 
@@ -49,6 +50,7 @@ uint8_t is_button_enabled(button_id_t button_id) {
 }
 
 char disp_str[] = "   "; // 3 spaces
+uint8_t marker_data[8] = {0,0,0,0,0,0,0,0};
 
 // runs once only when initially enabled
 void on_button_enabled(button_id_t enabled_id) {
@@ -63,6 +65,7 @@ void on_button_enabled(button_id_t enabled_id) {
 		case MARKER_BUTTON:
 			sprintf(disp_str, "MRK");
 			UG_PutString(100, 250, disp_str);
+			sd_card_write_data(0x900, marker_data);
 			break;
 		case OVERTAKE_BUTTON:
 			sprintf(disp_str, "OVT");
