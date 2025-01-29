@@ -1002,6 +1002,8 @@ void MainEntry(void *argument)
 		Display_Update();
 	}
 
+	Error_Display_Update();
+
 	debug_enabled_update();
 
 	// telem
