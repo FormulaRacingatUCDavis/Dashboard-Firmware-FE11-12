@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+#include "stdatomic.h"
 #include "inttypes.h"
 #include "can_manager.h"
 #include "sensors.h"
@@ -78,6 +79,8 @@ UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_uart4_rx;
 
 SRAM_HandleTypeDef hsram1;
+
+uint64_t profiler_perf_timer;
 
 /* Definitions for DashboardMain */
 osThreadId_t DashboardMainHandle;
@@ -1305,6 +1308,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
+  if (htim->Instance == TIM4) {
+	  ++profiler_perf_timer;
+  }
 
   /* USER CODE END Callback 1 */
 }

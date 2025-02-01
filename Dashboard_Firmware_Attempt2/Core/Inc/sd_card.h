@@ -11,6 +11,7 @@ typedef enum {
 
 sd_card_mount_result_t sd_card_mount(void);
 void sd_card_write_data(uint32_t id, uint8_t data[]);
+void sd_card_write_string(uint32_t id, const char* data);
 void sd_card_write_can_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]);
 void sd_card_write_can_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]);
 void sd_card_update_sync(void);

@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "semphr.h"
 #include "string.h"
+#include "profiler.h"
 
 #define BUFLEN 8192
 #define ENTRY_SIZE (4 + 8 + 4)
@@ -95,6 +96,8 @@ void sd_card_write_data(uint32_t id, uint8_t data[]) {
 
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 
+	PROFILER_FUNC_AUTO();
+
 	// make sure we don't reach the end of the buffer
 	if ((buffer_size + ENTRY_SIZE) >= BUFLEN) {
 		sd_card_write_from_buffer();
@@ -123,15 +126,21 @@ void sd_card_write_data(uint32_t id, uint8_t data[]) {
 }
 
 void sd_card_write_can_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
+	PROFILER_FUNC_AUTO();
+
 	sd_card_write_data(rxHeader.StdId, rxData);
 }
 
 void sd_card_write_can_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
+	PROFILER_FUNC_AUTO();
+
 	sd_card_write_data(txHeader.StdId, txData);
 }
 
 void sd_card_update_sync(void) {
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
+
+	PROFILER_FUNC_AUTO();
 
 	sd_card_write_from_buffer();
 	sd_card_flush_internal();
@@ -141,6 +150,8 @@ void sd_card_update_sync(void) {
 
 void sd_card_update_async(void) {
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
+
+	PROFILER_FUNC_AUTO();
 
 	sd_card_write_from_buffer();
 
@@ -155,17 +166,21 @@ void sd_card_update_async(void) {
 /* Public variant, locks mutex */
 void sd_card_flush(void) {
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
+	PROFILER_FUNC_AUTO();
 	sd_card_flush_internal();
 	xSemaphoreGive(sd_mutex);
 }
 
 /* Only to be used if mutex is active. */
 static void sd_card_flush_internal(void) {
+	PROFILER_FUNC_AUTO();
 	f_sync(&SDFile);
 	writes_since_flush = 0;
 }
 
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
+	PROFILER_FUNC_AUTO();
+
 	// make sure we don't reach the end of the buffer
 	if ((buffer_size + count) >= BUFLEN) {
 		sd_card_write_from_buffer();
@@ -177,6 +192,8 @@ static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
 
 static void sd_card_write_from_buffer(void) {
 	static UINT bytes_written = 0;
+
+	PROFILER_FUNC_AUTO();
 
 	if (buffer_size == 0) return;
 
