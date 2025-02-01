@@ -61,8 +61,8 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 		case MC_VOLTAGE_INFO:
 			static uint8_t mc_voltage_msg_counter = 0;
 
-			capacitor_volt = (rxData[1] << 8); // upper bits
-			capacitor_volt += rxData[0]; // lower bits
+			capacitor_volt_x10 = (rxData[1] << 8); // upper bits
+			capacitor_volt_x10 += rxData[0]; // lower bits
 
 			if (mc_voltage_msg_counter == 0)
 				sd_card_write_can_rx(rxHeader, rxData);
@@ -197,8 +197,8 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			break;
 		case MC_INTERNAL_CURRENTS:
 			int16_t current_x10 = (rxData[7] << 8) + rxData[6];
-			if(capacitor_volt > 0 && current_x10 > 0){
-				uint16_t power = (capacitor_volt / 10) * (current_x10 / 10) / 1000;
+			if(capacitor_volt_x10 > 0 && current_x10 > 0){
+				uint16_t power = (capacitor_volt_x10 / 10) * (current_x10 / 10) / 1000;
 				if(power > max_power) max_power = power;
 			}
 			break;

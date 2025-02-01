@@ -24,7 +24,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
-#include "stdatomic.h"
 #include "inttypes.h"
 #include "can_manager.h"
 #include "sensors.h"

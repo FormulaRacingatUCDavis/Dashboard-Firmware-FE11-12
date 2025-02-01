@@ -28,11 +28,13 @@ void profiler_record_marker(profiler_data_t marker);
 
 #if FRUCD_PROFILER_ENABLED
 	#define PROFILER_SCOPE_AUTO(x) \
-		profiler_data_t marker __attribute__((cleanup(profiler_auto_ended))); \
+		profiler_data_t marker; \
 		marker.magic = 0xFA57FA57; \
-		marker.scope_name = x; \
+		strncpy(marker.scope_name, x, 32); \
 		marker.start = profiler_perf_timer; \
 		marker.thread_id = 0;
+
+
 
 	#define PROFILER_FUNC_AUTO() PROFILER_SCOPE_AUTO(__func__)
 
