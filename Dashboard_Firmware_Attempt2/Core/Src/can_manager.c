@@ -5,7 +5,7 @@
 
 volatile uint8_t mc_lockout;
 volatile uint8_t mc_enabled;
-volatile int16_t capacitor_volt = 0;
+volatile int16_t capacitor_volt_x10 = 0;
 volatile uint8_t shutdown_flags = 0b0011111000;  //start with shutdown flags OK
 volatile uint8_t estop_flags = 0;
 volatile uint8_t switches = 0xC0;   //start with switches on to stay in startup state
@@ -30,7 +30,6 @@ volatile int16_t outlet_pres = 0;
 volatile uint16_t telem_id = 0;
 volatile uint16_t sg_rear = 0;
 volatile uint16_t max_power = 0;
-volatile int16_t voltage_x10 = 0;
 
 static CAN_RxHeaderTypeDef RxHeader;
 static uint8_t RxData[8];
@@ -57,16 +56,16 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			pack_voltage = (rxData[4] << 8);
 			pack_voltage += rxData[5];
 
-			sd_card_write_from_rx(rxHeader, rxData);
+			sd_card_write_can_rx(rxHeader, rxData);
 			break;
 		case MC_VOLTAGE_INFO:
 			static uint8_t mc_voltage_msg_counter = 0;
 
-			capacitor_volt = (rxData[0] << 8); // upper bits
-			capacitor_volt += rxData[1]; // lower bits
+			capacitor_volt_x10 = (rxData[1] << 8); // upper bits
+			capacitor_volt_x10 += rxData[0]; // lower bits
 
 			if (mc_voltage_msg_counter == 0)
-				sd_card_write_from_rx(rxHeader, rxData);
+				sd_card_write_can_rx(rxHeader, rxData);
 
 			mc_voltage_msg_counter++;
 			mc_voltage_msg_counter %= 50;
@@ -79,7 +78,7 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			mc_enabled = rxData[6] & 0b1;
 
 			if (mc_state_msg_counter == 0)
-				sd_card_write_from_rx(rxHeader, rxData);
+				sd_card_write_can_rx(rxHeader, rxData);
 
 			mc_state_msg_counter++;
 			mc_state_msg_counter %= 50;
@@ -87,13 +86,13 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			break;
 		case PEI_CURRENT_SHUTDOWN:
 			shutdown_flags = rxData[2];
-			sd_card_write_from_rx(rxHeader, rxData);
+			sd_card_write_can_rx(rxHeader, rxData);
 			break;
 		case MC_FAULT_CODES:
 			static uint8_t mc_fault_msg_counter = 0;
 
 			if (mc_fault_msg_counter == 0)
-				sd_card_write_from_rx(rxHeader, rxData);
+				sd_card_write_can_rx(rxHeader, rxData);
 
 			++mc_fault_msg_counter;
 			mc_fault_msg_counter %= 50;
@@ -138,7 +137,7 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			telem_id = 0;
 
 			if (mc_motor_pos_msg_counter == 0)
-				sd_card_write_from_rx(rxHeader, rxData);
+				sd_card_write_can_rx(rxHeader, rxData);
 
 			++mc_motor_pos_msg_counter;
 			mc_motor_pos_msg_counter %= 10;
@@ -155,7 +154,7 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			outlet_pres += rxData[7];
 			telem_id = 1;
 
-			sd_card_write_from_rx(rxHeader, rxData);
+			sd_card_write_can_rx(rxHeader, rxData);
 			break;
 		case MC_TEMP_3:
 			static uint8_t motor_temp_msg_counter = 0;
@@ -164,7 +163,7 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			motor_temp += rxData[4];
 
 			if (motor_temp_msg_counter == 0)
-				sd_card_write_from_rx(rxHeader, rxData);
+				sd_card_write_can_rx(rxHeader, rxData);
 			++motor_temp_msg_counter;
 			motor_temp_msg_counter %= 50;
 
@@ -178,7 +177,7 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			mc_temp = (module_a_temp + module_b_temp + module_c_temp) / 3; // no unit conversion, don't want to store float
 
 			if (mc_temp_msg_counter == 0)
-				sd_card_write_from_rx(rxHeader, rxData);
+				sd_card_write_can_rx(rxHeader, rxData);
 			++mc_temp_msg_counter;
 			mc_temp_msg_counter %= 50;
 
@@ -190,7 +189,7 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			glv_v += rxData[6]; // no unit conversion, don't want to store float
 
 			if (mc_glv_msg_counter == 0)
-				sd_card_write_from_rx(rxHeader, rxData);
+				sd_card_write_can_rx(rxHeader, rxData);
 
 			++mc_glv_msg_counter;
 			mc_glv_msg_counter %= 100;
@@ -198,8 +197,8 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			break;
 		case MC_INTERNAL_CURRENTS:
 			int16_t current_x10 = (rxData[7] << 8) + rxData[6];
-			if(capacitor_volt > 0 && current_x10 > 0){
-				uint16_t power = (capacitor_volt / 10) * (current_x10 / 10) / 1000;
+			if(capacitor_volt_x10 > 0 && current_x10 > 0){
+				uint16_t power = (capacitor_volt_x10 / 10) * (current_x10 / 10) / 1000;
 				if(power > max_power) max_power = power;
 			}
 			break;
@@ -241,7 +240,7 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
     };
 
 	if (vcu_state_msg_counter == 0)
-		sd_card_write_from_tx(TxHeader, data_tx_state);
+		sd_card_write_can_tx(TxHeader, data_tx_state);
 
 	vcu_state_msg_counter++;
 	vcu_state_msg_counter %= 50;
@@ -285,7 +284,7 @@ void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc){
     };
 
 	if (tc_sg_msg_counter == 0)
-		sd_card_write_from_tx(TxHeader, data_tx_state);
+		sd_card_write_can_tx(TxHeader, data_tx_state);
 
 	tc_sg_msg_counter++;
 	tc_sg_msg_counter %= 2;
@@ -326,7 +325,7 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
     };
 
     if (torque_request_msg_counter == 0)
-    	sd_card_write_from_tx(TxHeader, data_tx_torque);
+    	sd_card_write_can_tx(TxHeader, data_tx_torque);
 
     torque_request_msg_counter++;
 	torque_request_msg_counter %= 2;

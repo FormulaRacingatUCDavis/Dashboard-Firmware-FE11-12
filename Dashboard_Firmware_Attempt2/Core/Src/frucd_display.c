@@ -15,12 +15,27 @@
 #include "frucd_display.h"
 #include "can_manager.h"
 #include "sensors.h"
+#include <stdio.h>
+#include "ugui.h"
+#include "ugui_SSD1963.h"
+#include "stm32f7xx_hal.h"
+#include "stdint.h"
+#include "string.h"
+#include "stdbool.h"
+#include "frucd_defines.h"
 #include "fsm.h"
+#include "driver_input.h"
 
 #define INV_WHEEL_RADIUS_MI 1302
 #define SPEED_REFRESH_RATE_MS 100
 
-error_t prev_error = NONE;
+
+
+
+
+
+
+_t prev_error = NONE;
 uint8_t error_flash_timer = 0;
 bool suppress_update = false;
 bool refresh_required = false;
@@ -148,6 +163,15 @@ void Display_Splashscreen()
 	UG_FillScreen(C_WHITE);
 	HW_DrawImage_UCDCompressed(40, 68, 40+399, 68+135, logo, 1970);
 
+}
+
+void Display_Update() {
+	if (is_button_enabled(DEBUG_BUTTON)) {
+		Debug_Display_Update();
+	}
+	else {
+		Drive_Display_Update();
+	}
 }
 
 void Display_DebugTemplate()
@@ -333,7 +357,7 @@ void Display_DriveTemplate()
 }
 
 
-void Display_Update()
+void Drive_Display_Update()
 {
 //	soc = soc+1 ;
 //	glv_v+=1;

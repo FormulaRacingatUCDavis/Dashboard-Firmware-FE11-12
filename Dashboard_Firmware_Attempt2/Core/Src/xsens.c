@@ -108,7 +108,7 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 
 
 			//CAN_Send(&hcan1, 0x100, data, 6);
-			sd_card_write_data_record(0x100, data);
+			sd_card_write_data(0x100, data);
             }
             break;
 
@@ -129,7 +129,7 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 			data[5] = LO8(acc_z);
 
 			//CAN_Send(&hcan1, 0x101, data, 6);
-			sd_card_write_data_record(0x100, data);
+			sd_card_write_data(0x100, data);
             }
             break;
 

@@ -35,6 +35,7 @@
 #include "telem.h"
 #include "xsens.h"
 #include "driver_input.h"
+#include "ugui.h"
 
 
 /* USER CODE END Includes */
@@ -994,17 +995,15 @@ void MainEntry(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	// display
-	if (display_debug_enabled) {
-		Debug_Display_Update();
-	}
-	else {
-		Display_Update();
-	}
+
 
 	Error_Display_Update();
+    
+	// driver input
+	driver_input_update();
 
-	debug_enabled_update();
+	// display
+	Display_Update();
 
 	// telem
 	telem_send();
@@ -1033,8 +1032,7 @@ void MainEntry(void *argument)
 	//UG_PutString(5, 250, sstr);
 
 	// traction control
-	traction_control_enabled_update();
-	if (traction_control_enabled) {
+	if (is_button_enabled(TC_BUTTON)) {
 		traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	}
 
@@ -1260,7 +1258,7 @@ void SDCardEntry(void *argument)
 {
   /* USER CODE BEGIN SDCardEntry */
 
-	SD_CARD_MOUNT_RESULT res = sd_card_mount();
+	sd_card_mount_result_t res = sd_card_mount();
 	if (res != SD_CARD_MOUNT_RESULT_SUCCESS) {
 		// FAILED TO MOUNT SD CARD!
 		osThreadTerminate(osThreadGetId());
@@ -1269,9 +1267,9 @@ void SDCardEntry(void *argument)
 	/* Infinite loop */
 	while (1)
 	{
-		//osDelay(100);
+		osDelay(3);
 		// sd_card_write_sync();
-		sd_card_write_async();
+		sd_card_update_async();
 	}
 
 	/* In case we accidentally leave the infinite loop */
