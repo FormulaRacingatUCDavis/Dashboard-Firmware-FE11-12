@@ -1271,6 +1271,8 @@ void SDCardEntry(void *argument)
 	/* Infinite loop */
 	while (1)
 	{
+		PROFILER_SCOPE_AUTO("SD Card Update");
+
 		osDelay(3);
 		// sd_card_write_sync();
 		sd_card_update_async();

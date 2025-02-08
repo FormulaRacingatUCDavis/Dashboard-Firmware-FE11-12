@@ -9,6 +9,7 @@
 #define INC_PROFILER_H_
 
 #include <stdint.h>
+#include "cmsis_os.h"
 
 // Switch this to 1 to enable the profiler
 #define FRUCD_PROFILER_ENABLED 1
@@ -32,7 +33,7 @@ void profiler_record_marker(profiler_data_t* marker);
 		marker##__LINE__.magic = 0xFA57FA57; \
 		strncpy(marker##__LINE__.scope_name, x, 32); \
 		marker##__LINE__.start = profiler_perf_timer; \
-		marker##__LINE__.thread_id = 0;
+		marker##__LINE__.thread_id = (uint32_t)osThreadGetId();
 
 
 
