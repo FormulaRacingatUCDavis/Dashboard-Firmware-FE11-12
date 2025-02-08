@@ -35,6 +35,7 @@
 #include "telem.h"
 #include "xsens.h"
 #include "driver_input.h"
+#include "profiler.h"
 
 
 /* USER CODE END Includes */
@@ -996,6 +997,7 @@ void MainEntry(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	PROFILER_SCOPE_AUTO("Main");
 	// display
 	if (display_debug_enabled) {
 		Debug_Display_Update();
