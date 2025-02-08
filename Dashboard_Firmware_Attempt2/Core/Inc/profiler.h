@@ -24,15 +24,15 @@ typedef struct {
 
 extern uint64_t profiler_perf_timer;
 
-void profiler_record_marker(profiler_data_t marker);
+void profiler_record_marker(profiler_data_t* marker);
 
 #if FRUCD_PROFILER_ENABLED
 	#define PROFILER_SCOPE_AUTO(x) \
-		profiler_data_t marker; \
-		marker.magic = 0xFA57FA57; \
-		strncpy(marker.scope_name, x, 32); \
-		marker.start = profiler_perf_timer; \
-		marker.thread_id = 0;
+		profiler_data_t marker##__LINE__ __attribute__ ((__cleanup__(profiler_record_marker))); \
+		marker##__LINE__.magic = 0xFA57FA57; \
+		strncpy(marker##__LINE__.scope_name, x, 32); \
+		marker##__LINE__.start = profiler_perf_timer; \
+		marker##__LINE__.thread_id = 0;
 
 
 

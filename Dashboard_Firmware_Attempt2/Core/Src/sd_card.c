@@ -22,7 +22,7 @@ extern FIL SDFile;
 static char buffer[BUFLEN];
 static uint32_t buffer_size = 0;
 
-static SemaphoreHandle_t sd_mutex = NULL;
+static SemaphoreHandle_t sd_mutex = 0;
 static StaticSemaphore_t sd_mutex_buffer;
 
 static uint32_t writes_since_flush = 0;
@@ -122,8 +122,6 @@ void sd_card_write_data(uint32_t id, uint8_t data[]) {
 
 	buffer_size += ENTRY_SIZE;
 
-	profiler_record_marker(marker);
-
 	xSemaphoreGive(sd_mutex);
 }
 
@@ -131,16 +129,12 @@ void sd_card_write_can_rx(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 	PROFILER_FUNC_AUTO();
 
 	sd_card_write_data(rxHeader.StdId, rxData);
-
-	profiler_record_marker(marker);
 }
 
 void sd_card_write_can_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
 	PROFILER_FUNC_AUTO();
 
 	sd_card_write_data(txHeader.StdId, txData);
-
-	profiler_record_marker(marker);
 }
 
 void sd_card_update_sync(void) {
@@ -150,8 +144,6 @@ void sd_card_update_sync(void) {
 
 	sd_card_write_from_buffer();
 	sd_card_flush_internal();
-
-	profiler_record_marker(marker);
 
 	xSemaphoreGive(sd_mutex);
 }
@@ -168,8 +160,6 @@ void sd_card_update_async(void) {
 		sd_card_flush_internal();
 	}
 
-	profiler_record_marker(marker);
-
 	xSemaphoreGive(sd_mutex);
 }
 
@@ -178,7 +168,6 @@ void sd_card_flush(void) {
 	xSemaphoreTake(sd_mutex, portMAX_DELAY);
 	PROFILER_FUNC_AUTO();
 	sd_card_flush_internal();
-	profiler_record_marker(marker);
 	xSemaphoreGive(sd_mutex);
 }
 
@@ -187,7 +176,6 @@ static void sd_card_flush_internal(void) {
 	PROFILER_FUNC_AUTO();
 	f_sync(&SDFile);
 	writes_since_flush = 0;
-	profiler_record_marker(marker);
 }
 
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
@@ -200,9 +188,6 @@ static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
 
 	memcpy(buffer + buffer_size, bytes, count);
 	buffer_size += count;
-
-	profiler_record_marker(marker);
-
 }
 
 static void sd_card_write_from_buffer(void) {
@@ -223,8 +208,4 @@ static void sd_card_write_from_buffer(void) {
 #endif
 
 	buffer_size = 0;
-
-	profiler_record_marker(marker);
-
-
 }
