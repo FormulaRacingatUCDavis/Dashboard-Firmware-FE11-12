@@ -31,7 +31,7 @@ void profiler_record_marker(profiler_data_t* marker);
 		profiler_data_t marker##__LINE__ __attribute__ ((__cleanup__(profiler_record_marker))); \
 		marker##__LINE__.magic = 0xFA57FA57; \
 		strncpy(marker##__LINE__.scope_name, x, 32); \
-		marker##__LINE__.start = profiler_perf_timer; \
+		marker##__LINE__.start = (uint64_t)HAL_GetTick(); \
 		marker##__LINE__.thread_id = 0;
 
 

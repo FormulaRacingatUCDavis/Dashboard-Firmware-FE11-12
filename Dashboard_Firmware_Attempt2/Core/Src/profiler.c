@@ -13,6 +13,6 @@ extern UART_HandleTypeDef huart3;
 
 void profiler_record_marker(profiler_data_t* marker)
 {
-	marker->end = profiler_perf_timer;
+	marker->end = (uint64_t)HAL_GetTick();
 	HAL_UART_Transmit(&huart3, (const uint8_t*)marker, sizeof(profiler_data_t), 0xFA57);
 }
