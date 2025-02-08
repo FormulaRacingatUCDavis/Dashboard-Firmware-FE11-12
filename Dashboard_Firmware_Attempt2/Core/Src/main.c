@@ -79,7 +79,7 @@ DMA_HandleTypeDef hdma_uart4_rx;
 
 SRAM_HandleTypeDef hsram1;
 
-uint64_t profiler_perf_timer = 0;
+volatile uint64_t profiler_perf_timer = 0;
 
 /* Definitions for DashboardMain */
 osThreadId_t DashboardMainHandle;
@@ -1305,6 +1305,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {
     HAL_IncTick();
+    ++profiler_perf_timer;
   }
   /* USER CODE BEGIN Callback 1 */
   /*if (htim->Instance == TIM4) {
