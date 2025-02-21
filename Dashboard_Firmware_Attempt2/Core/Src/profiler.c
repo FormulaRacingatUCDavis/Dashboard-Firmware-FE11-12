@@ -8,6 +8,7 @@
 #include "profiler.h"
 
 #include "stm32f7xx_hal.h"
+#include "semphr.h"
 
 extern UART_HandleTypeDef huart3;
 
