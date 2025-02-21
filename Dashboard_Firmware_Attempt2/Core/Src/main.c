@@ -80,8 +80,6 @@ DMA_HandleTypeDef hdma_uart4_rx;
 
 SRAM_HandleTypeDef hsram1;
 
-volatile uint64_t profiler_perf_timer = 0;
-
 /* Definitions for DashboardMain */
 osThreadId_t DashboardMainHandle;
 const osThreadAttr_t DashboardMain_attributes = {
@@ -102,6 +100,8 @@ const osThreadAttr_t SDCard_attributes = {
 volatile unsigned int precharge_timer_ms = 0;
 volatile uint8_t init_fault_cleared = 0;
 extern uint32_t torque_req;
+
+volatile uint64_t profiler_perf_timer = 0;
 
 /* USER CODE END PV */
 
