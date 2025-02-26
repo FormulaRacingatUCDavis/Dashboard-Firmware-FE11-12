@@ -35,10 +35,12 @@ typedef struct {
 	uint16_t padding; // Not needed
 } biscuit_header_t;
 
+// Internal (static) functions
 static void sd_card_flush_internal(void);
 static void sd_card_write_from_buffer(void);
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count);
 
+/* Used to initialize the SD card */
 sd_card_mount_result_t sd_card_mount(void) {
 	FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
 	if (res == FR_OK) {
@@ -80,6 +82,7 @@ sd_card_mount_result_t sd_card_mount(void) {
 	return (res == FR_OK) ? SD_CARD_MOUNT_RESULT_SUCCESS : SD_CARD_MOUNT_RESULT_FAILED;
 }
 
+/* Writes an 8-byte message */
 void sd_card_write_data(uint32_t id, uint8_t data[]) {
 	uint32_t tick;
 
@@ -122,6 +125,7 @@ void sd_card_write_can_tx(CAN_TxHeaderTypeDef txHeader, uint8_t txData[]) {
 	sd_card_write_data(txHeader.StdId, txData);
 }
 
+/* Forces a sync after writing from buffer */
 void sd_card_update_sync(void) {
 	PROFILER_FUNC_AUTO();
 
@@ -129,6 +133,7 @@ void sd_card_update_sync(void) {
 	sd_card_flush_internal();
 }
 
+/* Only syncs if we haven't in a while */
 void sd_card_update_async(void) {
 	PROFILER_FUNC_AUTO();
 
@@ -153,6 +158,7 @@ static void sd_card_flush_internal(void) {
 	writes_since_flush = 0;
 }
 
+/* Write arbitrary bytes to sd (mainly used for biscuit header) */
 static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
 	PROFILER_FUNC_AUTO();
 
@@ -165,6 +171,7 @@ static void sd_card_write_data_bytes(uint8_t* bytes, uint32_t count) {
 	buffer_size += count;
 }
 
+/* writes buffer contents to file */
 static void sd_card_write_from_buffer(void) {
 	static UINT bytes_written = 0;
 
