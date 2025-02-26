@@ -25,7 +25,6 @@ typedef struct {
 
 extern volatile uint64_t profiler_perf_timer;
 
-void profiler_init(void);
 void profiler_record_marker(profiler_data_t* marker);
 
 #if FRUCD_PROFILER_ENABLED
@@ -40,12 +39,9 @@ void profiler_record_marker(profiler_data_t* marker);
 
 	#define PROFILER_FUNC_AUTO() PROFILER_SCOPE_AUTO(__func__)
 
-	#define PROFILER_INIT() profiler_init();
-
 #else
 	#define PROFILER_SCOPE_AUTO(x)
 	#define PROFILER_FUNC_AUTO()
-	#define PROFILER_INIT()
 #endif
 
 #endif /* INC_PROFILER_H_ */
