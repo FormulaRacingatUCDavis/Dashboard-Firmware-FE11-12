@@ -35,6 +35,7 @@
 #include "telem.h"
 #include "xsens.h"
 #include "driver_input.h"
+#include "driver_practice.h"
 #include "ugui.h"
 #include "serial_print.h"
 
@@ -981,6 +982,9 @@ void MainEntry(void *argument)
 
 	Display_DriveTemplate();
 
+	// FIXME temp for driver practice, should be called on button press instead?
+	 initialize_start_coordinates();
+
 	if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK) {
 	  Error_Handler();
 	}
@@ -1060,7 +1064,8 @@ void MainEntry(void *argument)
 	}
 
 	Xsens_Update(&huart4);
-	print("main");
+
+	driver_practice_update();
 
 	switch (state) {
 		case LV_LOCK:
