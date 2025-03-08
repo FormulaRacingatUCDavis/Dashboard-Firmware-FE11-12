@@ -12,6 +12,7 @@
 #include "fatfs.h"
 #include "can_manager.h"
 #include "sd_card.h"
+#include "serial_print.h"
 
 #include <stdbool.h>
 
@@ -34,7 +35,6 @@ void Xsens_Update(UART_HandleTypeDef* h_uart){
 	static uint8_t rx_buf[BUFLEN];
 	static xsens_interface_t imu_interface = XSENS_INTERFACE_RX(&imu_callback);
 
-
 	if(first_run){
 		Serial_Init(&serial, h_uart, rx_buf, BUFLEN);
 		Serial_StartListening(&serial);
@@ -42,14 +42,17 @@ void Xsens_Update(UART_HandleTypeDef* h_uart){
 
 		// for some reason it doesn't seem to receive anything until I've sent a byte?
 		// kinda sus somebody should look into this one
-		uint8_t bytes[1] = {1};
-		Serial_SendBytes(&serial, bytes, 1, 10);
+//		uint8_t bytes[1] = {1};
+//		Serial_SendBytes(&serial, bytes, 1, 10);
 	}
 
 	uint32_t b = Serial_BytesAvailable(&serial);
 	for(uint32_t i = 0; i < b; i++){
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
-	 xsens_mti_parse(&imu_interface, Serial_GetByte(&serial));
+//		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+
+		 xsens_mti_parse(&imu_interface, Serial_GetByte(&serial));
+		 print(rx_buf);
+
 	}
 }
 
