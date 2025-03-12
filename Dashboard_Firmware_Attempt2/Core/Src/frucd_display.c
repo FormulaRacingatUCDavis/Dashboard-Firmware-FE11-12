@@ -35,7 +35,7 @@
 
 
 
-_t prev_error = NONE;
+uint8_t prev_error = NONE;
 uint8_t error_flash_timer = 0;
 bool suppress_update = false;
 bool refresh_required = false;
