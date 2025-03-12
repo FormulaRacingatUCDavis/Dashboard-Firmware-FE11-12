@@ -997,6 +997,9 @@ void MainEntry(void *argument)
   for(;;)
   {
 
+
+	Error_Display_Update();
+    
 	// driver input
 	driver_input_update();
 

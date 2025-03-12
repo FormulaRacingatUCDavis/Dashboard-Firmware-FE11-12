@@ -14,6 +14,7 @@
 */
 #include "frucd_display.h"
 #include "can_manager.h"
+#include "sensors.h"
 #include <stdio.h>
 #include "ugui.h"
 #include "ugui_SSD1963.h"
@@ -27,6 +28,18 @@
 
 #define INV_WHEEL_RADIUS_MI 1302
 #define SPEED_REFRESH_RATE_MS 100
+
+
+
+
+
+
+
+uint8_t prev_error = NONE;
+uint8_t error_flash_timer = 0;
+bool suppress_update = false;
+bool refresh_required = false;
+bool error_is_red = true;
 
 extern volatile uint32_t front_right_wheel_speed;
 extern volatile uint32_t front_left_wheel_speed;
@@ -42,6 +55,7 @@ typedef struct {
     UG_FONT font;
     UG_COLOR last_color;
     uint16_t last_value;
+    uint8_t last_pct;
     char units;
 } TEXTBOX_CONFIG;
 
@@ -82,6 +96,14 @@ TEXTBOX_CONFIG glv_v_box = {
 		.org_red_cutoff = 1050,
 		.units = 'V'};
 
+TEXTBOX_CONFIG accel_pedal1_box = {
+    .units = '%'
+};
+
+TEXTBOX_CONFIG accel_pedal2_box = {
+    .units = '%'
+};
+
 bool debug_mode = false;
 UG_GUI gui1963;
 
@@ -96,8 +118,11 @@ void draw_mc_fault_state(uint8_t mc_fault_state);
 void draw_motor_temp(uint16_t motor_temp);
 void draw_mc_temp(uint16_t mc_temp);
 void draw_shutdown(uint8_t shutdown);
+void draw_throttle1(uint16_t throttle1_percent);
+void draw_throttle2(uint16_t throttle2_percent);
 void draw_value_textbox(TEXTBOX_CONFIG* cfg, uint16_t value);
 void draw_textbox(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str_len);
+void draw_dynamic_bar_box(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str_len, uint8_t percent);
 UG_COLOR value_to_color(TEXTBOX_CONFIG cfg, uint16_t value);
 
 
@@ -158,38 +183,41 @@ void Display_DebugTemplate()
 
     // draw labels
     UG_FontSelect(&FONT_12X16);
-    UG_PutString(270, 0, "MAX KW:");
-    UG_PutString(30, 120, "MAX PACK T:");
+    UG_PutString(170, 0, "MAX KW:");
+    UG_PutString(20, 120, "MAX PACK T:");
 //    UG_PutString(10, 75, "STATE:");
-    UG_PutString(30, 180, "STATE:");
-    UG_PutString(30, 0, "MC T:");
+    UG_PutString(20, 180, "STATE:");
+    UG_PutString(20, 0, "MC T:");
 //    UG_PutString(10, 140, "GLV V:");
-    UG_PutString(270, 180, "GLV V:");
-    UG_PutString(30, 60, "MOTOR T:");
-    UG_PutString(270, 60, "SHUTDOWN:");
-    UG_PutString(270, 120, "MC FAULT:");
+    UG_PutString(170, 180, "GLV V:");
+    UG_PutString(20, 60, "MOTOR T:");
+    UG_PutString(170, 60, "SHUTDOWN:");
+    UG_PutString(170, 120, "MC FAULT:");
+    UG_PutString(330, 0, "THROTTLE 1:");
+    UG_PutString(330, 60, "THROTTLE 2:");
 
     // setup textbox configs
-    soc_box.box_x1 = 270;
+    soc_box.box_x1 = 170;
     soc_box.box_y1 = 20;
-    soc_box.box_x2 = 450;
+    soc_box.box_x2 = 310;
     soc_box.box_y2 = 50;
     soc_box.font = FONT_12X16;
     soc_box.last_color = C_BLACK;  // force box redraw
     soc_box.last_value = 255;
+    soc_box.last_pct = 101;
 
-    shutdown_box.box_x1 = 270;
+    shutdown_box.box_x1 = 170;
     shutdown_box.box_y1 = 80;
-    shutdown_box.box_x2 = 450;
+    shutdown_box.box_x2 = 310;
     shutdown_box.box_y2 = 110;
     shutdown_box.font = FONT_12X16;
     shutdown_box.last_color = C_BLACK;  // force box redraw
     shutdown_box.last_value = 255;
 
     //updated
-    bms_temp_box.box_x1 = 30;
+    bms_temp_box.box_x1 = 20;
 	bms_temp_box.box_y1 = 140;
-	bms_temp_box.box_x2 = 210;
+	bms_temp_box.box_x2 = 150;
 	bms_temp_box.box_y2 = 170;
 	bms_temp_box.font = FONT_12X16;
 	bms_temp_box.last_color = C_BLACK;  // force box redraw
@@ -203,9 +231,9 @@ void Display_DebugTemplate()
 //	state_box.last_color = C_BLACK;  // force box redraw
 
 	//updated
-	state_box.box_x1 = 30;
+	state_box.box_x1 = 20;
 	state_box.box_y1 = 200;
-	state_box.box_x2 = 210;
+	state_box.box_x2 = 150;
 	state_box.box_y2 = 230;
 	state_box.font = FONT_12X16;
 	state_box.last_color = C_BLACK;  // force box redraw
@@ -213,26 +241,28 @@ void Display_DebugTemplate()
 
 
 	//motor control temp updated
-	mc_temp_box.box_x1 = 30;
+	mc_temp_box.box_x1 = 20;
 	mc_temp_box.box_y1 = 20;
-	mc_temp_box.box_x2 = 210;
+	mc_temp_box.box_x2 = 150;
 	mc_temp_box.box_y2 = 50;
 	mc_temp_box.font = FONT_12X16;
 	mc_temp_box.last_color = C_BLACK;  // force box redraw
 	mc_temp_box.last_value = 255;
+	mc_temp_box.last_pct = 101;
 
 	//updated
-	motor_temp_box.box_x1 = 30;
+	motor_temp_box.box_x1 = 20;
 	motor_temp_box.box_y1 = 80;
-	motor_temp_box.box_x2 = 210;
+	motor_temp_box.box_x2 = 150;
 	motor_temp_box.box_y2 = 110;
 	motor_temp_box.font = FONT_12X16;
 	motor_temp_box.last_color = C_BLACK;  // force box redraw
 	motor_temp_box.last_value = 255;
+	motor_temp_box.last_pct = 101;
 
-	mc_fault_state_box.box_x1 = 270;
+	mc_fault_state_box.box_x1 = 170;
 	mc_fault_state_box.box_y1 = 140;
-	mc_fault_state_box.box_x2 = 450;
+	mc_fault_state_box.box_x2 = 310;
 	mc_fault_state_box.box_y2 = 170;
 	mc_fault_state_box.font = FONT_12X16;
 	mc_fault_state_box.last_color = C_BLACK;  // force box redraw
@@ -247,13 +277,29 @@ void Display_DebugTemplate()
 //	glv_v_box.last_color = C_BLACK;  // force box redraw
 
 	//updated
-	glv_v_box.box_x1 = 270;
+	glv_v_box.box_x1 = 170;
 	glv_v_box.box_y1 = 200;
-	glv_v_box.box_x2 = 450;
+	glv_v_box.box_x2 = 310;
 	glv_v_box.box_y2 = 230;
 	glv_v_box.font = FONT_12X16;
 	glv_v_box.last_color = C_BLACK;  // force box redraw
 
+    //draw accel pedal boxes
+	accel_pedal1_box.box_x1 = 330;
+	accel_pedal1_box.box_y1 = 20;
+	accel_pedal1_box.box_x2 = 460;
+	accel_pedal1_box.box_y2 = 50;
+	accel_pedal1_box.font = FONT_12X16;
+	accel_pedal1_box.last_color = C_BLACK; // force box redraw
+	accel_pedal1_box.last_pct = 101;
+
+	accel_pedal2_box.box_x1 = 330;
+	accel_pedal2_box.box_y1 = 80;
+	accel_pedal2_box.box_x2 = 460;
+	accel_pedal2_box.box_y2 = 110;
+	accel_pedal2_box.font = FONT_12X16;
+	accel_pedal2_box.last_color = C_BLACK; // force box redraw
+	accel_pedal2_box.last_pct = 101;
 }
 
 void Display_DriveTemplate()
@@ -316,6 +362,13 @@ void Drive_Display_Update()
 //	soc = soc+1 ;
 //	glv_v+=1;
 
+	if (suppress_update) return;
+
+    if (refresh_required) {
+    	Display_DriveTemplate();
+    	refresh_required = false;
+    }
+
 	draw_speed(front_left_wheel_speed, front_right_wheel_speed);
     draw_soc(soc);
     draw_bms_temp(PACK_TEMP);
@@ -324,6 +377,13 @@ void Drive_Display_Update()
 }
 
 void Debug_Display_Update() {
+	if (suppress_update) return;
+
+    if (refresh_required) {
+    	Display_DebugTemplate();
+    	refresh_required = false;
+    }
+
 	draw_soc(max_power);
 	draw_bms_temp(PACK_TEMP);
 	draw_state(one_byte_state(), bms_status);
@@ -332,6 +392,87 @@ void Debug_Display_Update() {
 	draw_motor_temp(motor_temp);
 	draw_mc_temp(mc_temp);
 	draw_shutdown(shutdown_flags);
+	draw_throttle1(throttle1.percent);
+	draw_throttle2(throttle2.percent);
+}
+
+void Error_Display_Update() {
+	uint8_t flash_length = 30;
+	uint8_t flash_max_count = 2;
+
+	if (error != prev_error) {
+		prev_error = error;
+		error_is_red = true;
+		if (error != NONE) {
+			suppress_update = true;
+			error_flash_timer = 0;
+		}
+		else {
+			suppress_update = false;
+			error_flash_timer = 0;
+		}
+	}
+
+	if (suppress_update) {
+		char string[11];
+		switch(error) {
+			case DRIVE_REQUEST_FROM_LV:
+				strcpy(string, "DRV FRM LV");
+				break;
+			case PRECHARGE_TIMEOUT:
+				strcpy(string, "PRE TM OUT");
+				break;
+			case BRAKE_NOT_PRESSED:
+				strcpy(string, "BR NOT PRS");
+				break;
+			case HV_DISABLED_WHILE_DRIVING:
+				strcpy(string, "HV OFF DRV");
+				break;
+			case SENSOR_DISCREPANCY:
+				strcpy(string, "SNSR DSCRP");
+				break;
+			case BRAKE_IMPLAUSIBLE:
+				strcpy(string, "BSPD TRIPD");
+				break;
+			case SHUTDOWN_CIRCUIT_OPEN:
+				strcpy(string, "SHTDWN OPN");
+				break;
+			case UNCALIBRATED:
+				strcpy(string, "UNCALIBRTD");
+				break;
+			case HARD_BSPD:
+				strcpy(string, "HARD  BSPD");
+				break;
+			case MC_FAULT:
+				strcpy(string, " MC FAULT ");
+				break;
+			default:
+				strcpy(string, " YO  WTF? ");
+				break;
+		}
+		if (error_flash_timer % flash_length == 0) {
+			if (error_is_red) {
+				UG_FillScreen(C_RED);
+				UG_FontSelect(&FONT_32X53);
+				UG_PutString(80, 75, string);
+				UG_FontSelect(&FONT_12X16);
+				error_is_red = false;
+			}
+			else {
+				UG_FillScreen(C_BLACK);
+				UG_FontSelect(&FONT_32X53);
+				UG_PutString(80, 75, string);
+				UG_FontSelect(&FONT_12X16);
+				error_is_red = true;
+			}
+		}
+		if (error_flash_timer >= flash_length * ((flash_max_count * 2) - 1)) {
+			refresh_required = true;
+			suppress_update = false;
+			error_flash_timer = 0;
+		}
+		error_flash_timer++;
+	}
 }
 
 void draw_speed(uint32_t fl_wheel_speed, uint32_t fr_wheel_speed) {
@@ -350,6 +491,10 @@ void draw_speed(uint32_t fl_wheel_speed, uint32_t fr_wheel_speed) {
 void draw_soc(uint16_t soc)
 {
 	draw_value_textbox(&soc_box, soc);
+//	uint8_t kW_percent = (int) (soc * 100.0 / 80.0);
+//	char str[3];
+//	sprintf(str, "%2i", soc);
+//	draw_dynamic_bar_box(&soc_box, C_RED, str, 2, kW_percent);
 }
 
 void draw_bms_temp(uint16_t temp)
@@ -372,9 +517,10 @@ void draw_motor_temp(uint16_t motor_temp) {
 		color = C_RED;
 	}
 
-	char str[11];
+	char str[4];
+	uint8_t temp_percent = (int) ((converted_motor_temp) * 100) / 60;
 	sprintf(str, "%.1f", converted_motor_temp);
-	draw_textbox(&motor_temp_box, color, str, 11);
+	draw_dynamic_bar_box(&motor_temp_box, color, str, 4, temp_percent);
 }
 
 void draw_mc_temp(uint16_t mc_temp) {
@@ -387,40 +533,41 @@ void draw_mc_temp(uint16_t mc_temp) {
 	} else {
 		color = C_RED;
 	}
-	char str[11];
+	char str[4];
+	uint8_t temp_percent = (int) ((converted_mc_temp) * 100) / 60;
 	sprintf(str, "%.1f", converted_mc_temp);
-	draw_textbox(&mc_temp_box, color, str, 11);
+	draw_dynamic_bar_box(&mc_temp_box, color, str, 4, temp_percent);
 }
 
 void draw_shutdown(uint8_t shutdown) {
 
-	char string[14];
+	char string[11];
 	UG_COLOR color;
 	color = C_GREEN;
 	//the 1 is the bit you want to extract
 	if (!(shutdown | 0b1)) {
-		strcpy(string, "  PRECHARGE   ");
+		strcpy(string, "PRECHARGE ");
 	}
 	if(!(shutdown | 0b10)) {
-		strcpy(string, "     AIR1     ");
+		strcpy(string, "   AIR1   ");
 	}
 	if(!(shutdown | 0b100)) {
-		strcpy(string, "     AIR2     ");
+		strcpy(string, "   AIR2   ");
 	}
 	if(!(shutdown | 0b1000)) {
-		strcpy(string, "SHUTDOWN FINAL");
+		strcpy(string, "STDN FINAL");
 	}
 	if(!(shutdown | 0b10000)) {
-		strcpy(string, "    BMS_OK    ");
+		strcpy(string, "  BMS_OK  ");
 	}
 	if(!(shutdown | 0b100000)) {
-		strcpy(string, "    IMD_OK    ");
+		strcpy(string, "  IMD_OK  ");
 	}
 	else {
-		strcpy(string, " NO SHUTDOWN ");
+		strcpy(string, " NO STDN  ");
 	}
 
-	draw_textbox(&shutdown_box, color, string, 14);
+	draw_textbox(&shutdown_box, color, string, 10);
 
 }
 
@@ -446,15 +593,15 @@ void draw_state(uint8_t state, uint16_t bms_status)
             break;
         case LOW_SOC:
             color = C_RED;
-            strcpy(string, " LOW SOC ");
+            strcpy(string, " LOW  SOC ");
             break;
         case IMBALANCE:
             color = C_RED;
-            strcpy(string, "IMBALANCE");
+            strcpy(string, "IMBALANCE ");
             break;
         case SPI_FAULT:
             color = C_RED;
-            strcpy(string, "SPI FAULT");
+            strcpy(string, "SPI  FAULT");
             break;
         case CELL_VOLT_OVER:
             color = C_RED;
@@ -462,7 +609,7 @@ void draw_state(uint8_t state, uint16_t bms_status)
             break;
         case CELL_VOLT_UNDER:
             color = C_RED;
-            strcpy(string, "UNDERVOLT");
+            strcpy(string, "UNDERVOLT ");
             break;
         default:
             // check fault bit
@@ -512,7 +659,7 @@ void draw_state(uint8_t state, uint16_t bms_status)
                         break;
                     case HARD_BSPD:
                         color = C_RED;
-                        strcpy(string, "HARD BSPD");
+                        strcpy(string, "HARD  BSPD");
                         break;
                     case MC_FAULT:
                         color = C_RED;
@@ -520,7 +667,7 @@ void draw_state(uint8_t state, uint16_t bms_status)
                         break;
                     default:
                         color = C_RED;
-                        strcpy(string, " YO WTF? ");
+                        strcpy(string, " YO  WTF? ");
                         break;
                 }
             }
@@ -544,21 +691,21 @@ void draw_state(uint8_t state, uint16_t bms_status)
                         break;
                     case LV_LOCK:
                     	color = C_YELLOW;
-                    	strcpy(string, "LV LOCKED ");
+                    	strcpy(string, "LV  LOCKED");
 						break;
                     case HV_LOCK:
 						color = C_YELLOW;
-						strcpy(string, "HV LOCKED ");
+						strcpy(string, "HV  LOCKED");
 						break;
                     default:
 						color = C_RED;
-						strcpy(string, " YO WTF? ");
+						strcpy(string, " YO  WTF? ");
 						break;
                 }
             }
     }
 
-    draw_textbox(&state_box, color, string, 11);
+    draw_textbox(&state_box, color, string, 10);
 }
 
 
@@ -576,6 +723,20 @@ void draw_glv_v(int16_t data) {
     char str[11];
     sprintf(str, "%.2f", converted_glv_v);
     draw_textbox(&glv_v_box, color, str, 5);
+}
+
+void draw_throttle1(uint16_t throttle1_percent) {
+	uint8_t thr_percent =  (uint8_t) throttle1_percent;
+	char str[5];
+	sprintf(str, "%3u%%", thr_percent);
+	draw_dynamic_bar_box(&accel_pedal1_box, C_GREEN, str, 4, thr_percent);
+}
+
+void draw_throttle2(uint16_t throttle2_percent) {
+	uint8_t thr_percent =  (uint8_t) throttle2_percent;
+	char str[5];
+	sprintf(str, "%3u%%", thr_percent);
+	draw_dynamic_bar_box(&accel_pedal2_box, C_GREEN, str, 4, thr_percent);
 }
 
 
@@ -652,6 +813,33 @@ void draw_textbox(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str
 
     UG_FontSelect(&cfg->font);
     UG_PutColorString(text_x, text_y, string, C_BLACK, color);
+}
+
+void draw_dynamic_bar_box(TEXTBOX_CONFIG* cfg, UG_COLOR color, char* string, uint8_t str_len, uint8_t percent) {
+	//ensure percent is valid
+	if (percent < 0) percent = 0;
+	if (percent > 100) percent = 100;
+
+	// determine x and y coordinates to center text
+	uint16_t text_x = (cfg->box_x2 + cfg->box_x1)/2 - ((str_len * cfg->font.char_width)/2);
+	uint16_t text_y = (cfg->box_y2 + cfg->box_y1)/2 - (cfg->font.char_height/2);
+
+	uint16_t bar_x2 = cfg->box_x1 + (((cfg->box_x2 - cfg->box_x1) * percent) / 100);
+
+	if(color != cfg->last_color)
+	{
+		cfg->last_color = color;
+	}
+
+	if(percent != cfg->last_pct) {
+		UG_FillFrame(cfg->box_x1, cfg->box_y1, cfg->box_x2, cfg->box_y2, C_WHITE);
+		UG_FillFrame(cfg->box_x1, cfg->box_y1, bar_x2, cfg->box_y2, color);
+		cfg->last_pct = percent;
+	}
+
+
+	UG_FontSelect(&cfg->font);
+	UG_PutColorString(text_x, text_y, string, C_BLACK, color);
 }
 
 
