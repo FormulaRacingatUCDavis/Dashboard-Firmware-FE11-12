@@ -15,6 +15,8 @@
 
 #include <stdbool.h>
 
+#include "profiler.h"
+
 extern CAN_HandleTypeDef hcan1;
 
 #define BUFLEN 200
@@ -34,6 +36,7 @@ void Xsens_Update(UART_HandleTypeDef* h_uart){
 	static uint8_t rx_buf[BUFLEN];
 	static xsens_interface_t imu_interface = XSENS_INTERFACE_RX(&imu_callback);
 
+	PROFILER_FUNC_AUTO();
 
 	if(first_run){
 		Serial_Init(&serial, h_uart, rx_buf, BUFLEN);
