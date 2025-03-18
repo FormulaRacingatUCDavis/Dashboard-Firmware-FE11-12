@@ -5,6 +5,7 @@
 #include "can_manager.h"
 #include "wheel_speed.h"
 #include "traction_control.h"
+#include "profiler.h"
 
 const uint8_t packet_validation[2] = {0x00, 0xff};
 uint32_t send_time;
@@ -15,6 +16,7 @@ extern UART_HandleTypeDef huart7;
 extern uint16_t sg_adc;
 
 void telem_send(void) {
+	PROFILER_FUNC_AUTO();
 	send_time = HAL_GetTick();
 	if (send_time - prev_time > TELEM_DELAY) {
 		Packet p = {{packet_validation[0], packet_validation[1]},

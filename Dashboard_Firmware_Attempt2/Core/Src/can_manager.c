@@ -3,6 +3,8 @@
 #include "serial_print.h"
 #include "traction_control.h"
 
+#include "profiler.h"
+
 volatile uint8_t mc_lockout;
 volatile uint8_t mc_enabled;
 volatile int16_t capacitor_volt_x10 = 0;
@@ -46,6 +48,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 /************ CAN RX ************/
 
 static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
+	PROFILER_FUNC_AUTO();
     // gets message and updates values
 	switch (rxHeader.StdId) {
 		case BMS_STATUS_MSG:

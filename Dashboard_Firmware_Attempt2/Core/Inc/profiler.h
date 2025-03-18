@@ -9,6 +9,7 @@
 #define INC_PROFILER_H_
 
 #include <stdint.h>
+#include <string.h>
 #include "cmsis_os.h"
 
 // Switch this to 1 to enable the profiler
@@ -22,6 +23,8 @@ typedef struct {
 	uint64_t end;
 	char scope_name[32];
 } profiler_data_t;
+
+_Static_assert(sizeof(profiler_data_t) == 56, "Unexpected size for profiler data");
 
 extern volatile uint64_t profiler_perf_timer;
 
