@@ -61,6 +61,12 @@ uint8_t traction_control_enable();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define CARD_DETECT_Pin GPIO_PIN_1
+#define CARD_DETECT_GPIO_Port GPIOF
+#define BUZZER_Pin GPIO_PIN_2
+#define BUZZER_GPIO_Port GPIOF
+#define BSPD_FAULT_Pin GPIO_PIN_4
+#define BSPD_FAULT_GPIO_Port GPIOF
 #define BSE_Pin GPIO_PIN_5
 #define BSE_GPIO_Port GPIOF
 #define ESP32_UART_RX_Pin GPIO_PIN_6
@@ -95,6 +101,8 @@ uint8_t traction_control_enable();
 #define PCAN_RX_GPIO_Port GPIOA
 #define PCAN_TX_Pin GPIO_PIN_12
 #define PCAN_TX_GPIO_Port GPIOA
+#define BAT_12V_MEASURE_Pin GPIO_PIN_6
+#define BAT_12V_MEASURE_GPIO_Port GPIOD
 #define BUTTON_4_Pin GPIO_PIN_9
 #define BUTTON_4_GPIO_Port GPIOG
 #define BUTTON_3_Pin GPIO_PIN_10
@@ -110,8 +118,6 @@ uint8_t traction_control_enable();
 #define GASP_INTERRUPT_Pin GPIO_PIN_15
 #define GASP_INTERRUPT_GPIO_Port GPIOG
 #define GASP_INTERRUPT_EXTI_IRQn EXTI15_10_IRQn
-#define BAT_12V_MEASURE_Pin GPIO_PIN_3
-#define BAT_12V_MEASURE_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
