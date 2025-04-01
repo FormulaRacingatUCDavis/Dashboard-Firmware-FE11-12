@@ -962,8 +962,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(HEARTBEAT_GPIO_Port, HEARTBEAT_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : CARD_DETECT_Pin BSPD_FAULT_Pin EXTRA_SENS2_Pin */
-  GPIO_InitStruct.Pin = CARD_DETECT_Pin|BSPD_FAULT_Pin|EXTRA_SENS2_Pin;
+  /*Configure GPIO pin : HARD_BSPD_Pin */
+  GPIO_InitStruct.Pin = HARD_BSPD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(HARD_BSPD_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : CARD_DETECT_Pin EXTRA_SENS2_Pin */
+  GPIO_InitStruct.Pin = CARD_DETECT_Pin|EXTRA_SENS2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
@@ -987,12 +993,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BAT_12V_MEASURE_Pin */
-  GPIO_InitStruct.Pin = BAT_12V_MEASURE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BAT_12V_MEASURE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BUTTON_4_Pin BUTTON_3_Pin BUTTON_2_Pin BUTTON_1_Pin
                            HV_REQUEST_Pin DRIVE_REQUEST_Pin */
