@@ -230,7 +230,7 @@ void can_tx_vcu_state(CAN_HandleTypeDef *hcan){
 	uint16_t tick = (uint16_t)HAL_GetTick();
 	uint8_t data_tx_state[8] = {
         0,
-        hv_requested(),
+        is_hv_requested(),
         throttle1.percent,
         throttle2.percent,
 		brake.percent,

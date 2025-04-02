@@ -28,7 +28,7 @@ button_state_t button_states[NUM_BUTTONS] = {
 	{last_valid_pressed_time: 0, enabled: 0} // drive
 };
 
-button_id_t check_button_pressed() {
+button_id_t which_button_pressed() {
 	if (!HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_12)) {
 		return TC_BUTTON;
 	}
@@ -40,6 +40,12 @@ button_id_t check_button_pressed() {
 	}
 	if (!HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_9)) {
 		return OVERTAKE_BUTTON;
+	}
+	if (!HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_13)) {
+		return HV_BUTTON;
+	}
+	if (!HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_14)) {
+		return DRIVE_BUTTON;
 	}
 	return NO_BUTTON;
 
@@ -71,6 +77,12 @@ void on_button_enabled(button_id_t enabled_id) {
 			sprintf(disp_str, "OVT");
 			UG_PutString(50, 250, disp_str);
 			break;
+		case HV_BUTTON:
+			// turn on LED
+			break;
+		case DRIVE_BUTTON:
+			// turn on LED
+			break;
 		default:
 
 	}
@@ -94,12 +106,18 @@ void on_button_disabled(button_id_t disabled_id) {
 			sprintf(disp_str, "   ");
 			UG_PutString(50, 250, disp_str);
 			break;
+		case HV_BUTTON:
+			// turn off LED
+			break;
+		case DRIVE_BUTTON:
+			// turn off LED
+			break;
 		default:
 	}
 }
 
 void driver_input_update() {
-	button_id_t pressed_btn_id = check_button_pressed();
+	button_id_t pressed_btn_id = which_button_pressed();
 	if (pressed_btn_id != NO_BUTTON) {
 		int32_t time_diff = HAL_GetTick() - button_states[pressed_btn_id].last_valid_pressed_time;
 		if (time_diff < 0) {
@@ -125,11 +143,11 @@ void driver_input_update() {
 	}
 }
 
-uint8_t hv_switch() {
-	return !HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_13);
-}
-
-uint8_t drive_switch() {
-	return !HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_14);
-}
+//uint8_t hv_switch() {
+//	return !HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_13);
+//}
+//
+//uint8_t drive_switch() {
+//	return !HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_14);
+//}
 

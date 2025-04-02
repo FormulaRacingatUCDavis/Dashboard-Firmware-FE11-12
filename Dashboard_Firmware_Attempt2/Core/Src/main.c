@@ -1101,13 +1101,13 @@ void MainEntry(void *argument)
 	}
 
 	//if hard BSPD trips in any state
-	//	  if (!HAL_GPIO_ReadPin(BSPD_LATCH){
-	//		  report_fault(HARD_BSPD);
-	//	  }
-	//
-	//	  if (mc_fault) {
-	//		  report_fault(MC_FAULT);
-	//	  }
+	if (!HAL_GPIO_ReadPin(HARD_BSPD_GPIO_Port, HARD_BSPD_Pin)) {
+	  report_fault(HARD_BSPD);
+	}
+
+//	  if (mc_fault) {
+//		  report_fault(MC_FAULT);
+//	  }
 
 
 	if (mc_fault) {
@@ -1121,13 +1121,6 @@ void MainEntry(void *argument)
 	print("main");
 
 	switch (state) {
-		case LV_LOCK:
-			run_calibration();
-
-			if (!hv_switch() && !drive_switch()) {
-			  change_state(LV);
-			}
-			break;
 		case LV:
 			run_calibration();
 
@@ -1143,8 +1136,12 @@ void MainEntry(void *argument)
 			  //break;
 			//}
 
-			if (hv_switch()) {
-				// HV switch was flipped
+//			if (is_button_enabled(DRIVE_BUTTON)) {
+//				// cannot request drive in LV
+//				report_fault(DRIVE_REQUEST_FROM_LV);
+//			}
+
+			if (is_button_enabled(HV_BUTTON)) {
 				add_apps_deadzone();
 				precharge_tick_start = HAL_GetTick();
 				change_state(PRECHARGING);
@@ -1153,8 +1150,8 @@ void MainEntry(void *argument)
 
 			break;
 		case PRECHARGING:
-			if (!hv_switch()) {
-				// Driver flipped off HV switch
+			// Driver turned off HV via button
+			if (!is_button_enabled(HV_BUTTON)) {
 				change_state(LV);
 				break;
 			}
@@ -1167,51 +1164,35 @@ void MainEntry(void *argument)
 		  // if main AIRs closed
 			if ((shutdown_flags & 0b110) == 0b110) {
 				// Finished charging to HV on time
-				change_state(HV_LOCK);
-				break;
-			}
-
-			break;
-		case HV_LOCK:
-			if (!hv_switch()) {
-				// Driver flipped off HV switch
-				change_state(LV);
-				break;
-			}
-
-			if(!drive_switch()){
-				// wait until drive is low to switch into true HV
 				change_state(HV_ENABLED);
+				break;
 			}
+
 			break;
 		case HV_ENABLED:
-			if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
-				// Driver flipped off HV switch
+			if (!is_button_enabled(HV_BUTTON)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
 				change_state(LV);
 				break;
 			}
-			if (drive_switch()) {
-				// Driver flipped on drive switch
-				// Need to press on pedal at the same time to go to drive
+			if (is_button_enabled(DRIVE_BUTTON)) {
 				if (brake_mashed()) {
 					change_state(DRIVE);
-				} else {
-					// Driver didn't press pedal
-					report_fault(BRAKE_NOT_PRESSED);
 				}
+//				else {
+//					// Driver didn't press pedal
+//					report_fault(BRAKE_NOT_PRESSED);
+//				}
 			}
 
 			break;
 		case DRIVE:
-			if (!drive_switch()) {
-				// Drive switch was flipped off
-				// Revert to HV
+			if (!is_button_enabled(DRIVE_BUTTON)) {
 				change_state(HV_ENABLED);
 				break;
 			}
 
-			if (!hv_switch()) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules || capacitor_volt < PRECHARGE_THRESHOLD) {
-				// HV switched flipped off, so can't drive
+			if (!is_button_enabled(HV_BUTTON)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
+				// HV turned off, so can't drive
 				// or capacitor dropped below threshold
 				change_state(LV);
 				break;
@@ -1225,12 +1206,12 @@ void MainEntry(void *argument)
 		case FAULT:
 			switch (error) {
 				case BRAKE_NOT_PRESSED:
-					if (!hv_switch()){
+					if (!is_button_enabled(HV_BUTTON)){
 						change_state(LV);
 						break;
 					}
 
-					if (!drive_switch()) {
+					if (!is_button_enabled(DRIVE_BUTTON)) {
 						// reset drive switch and try again
 						change_state(HV_ENABLED);
 					}
@@ -1238,22 +1219,22 @@ void MainEntry(void *argument)
 				case SENSOR_DISCREPANCY:
 					// stop power to motors if discrepancy persists for >100ms
 					// see rule T.4.2.5 in FSAE 2022 rulebook
-					if (!drive_switch()) {
+					if (!is_button_enabled(DRIVE_BUTTON)) {
 						discrepancy_timer_ms = 0;
 						change_state(HV_ENABLED);
 					}
 
-					if (!hv_switch())
+					if (!is_button_enabled(HV_BUTTON))
 						change_state(LV);
 
 					break;
 				case BRAKE_IMPLAUSIBLE:
-					if (!hv_switch()){
+					if (!is_button_enabled(HV_BUTTON)){
 						change_state(LV);
 						break;
 					}
 
-					if (!drive_switch()){
+					if (!is_button_enabled(DRIVE_BUTTON)){
 						change_state(HV_ENABLED);
 						break;
 					}
@@ -1266,7 +1247,7 @@ void MainEntry(void *argument)
 					break;
 				case SHUTDOWN_CIRCUIT_OPEN:
 					if (shutdown_closed()) {
-						change_state(LV_LOCK); // change to startup so we don't instantly request precharge
+						change_state(LV); // change to startup so we don't instantly request precharge
 					}
 					break;
 				case HARD_BSPD:
@@ -1281,13 +1262,13 @@ void MainEntry(void *argument)
 
 					// check if APPS pedal was calibrated
 					if(sensors_calibrated()){
-						change_state(LV_LOCK); // change to startup so we don't instantly request precharge
+						change_state(LV); // change to startup so we don't instantly request precharge
 						break;
 					}
 					break;
 
-				default:  //UNCALIBRATED, DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
-					if (!hv_switch() && !drive_switch()) {
+				default:  // DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
+					if (!is_button_enabled(HV_BUTTON) && !is_button_enabled(DRIVE_BUTTON)) {
 						change_state(LV);
 					}
 					break;

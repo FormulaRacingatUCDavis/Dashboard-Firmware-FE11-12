@@ -10,9 +10,7 @@ typedef enum {
     PRECHARGING,
     HV_ENABLED,
     DRIVE,
-    FAULT,
-    LV_LOCK,  // wait for LV switch to be low
-	HV_LOCK   // wait for HV switch to be low
+    FAULT
 } state_t;
 
 typedef enum {
@@ -35,7 +33,7 @@ extern volatile error_t error;
 
 void change_state(const state_t new_state);
 void report_fault(error_t _error);
-uint8_t hv_requested();
+uint8_t is_hv_requested();
 uint8_t one_byte_state();
 
 #endif	/* FSM_H */

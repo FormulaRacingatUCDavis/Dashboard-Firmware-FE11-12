@@ -542,14 +542,6 @@ void draw_state(uint8_t state, uint16_t bms_status)
                     case DRIVE:
                         strcpy(string, "  DRIVE   ");
                         break;
-                    case LV_LOCK:
-                    	color = C_YELLOW;
-                    	strcpy(string, "LV LOCKED ");
-						break;
-                    case HV_LOCK:
-						color = C_YELLOW;
-						strcpy(string, "HV LOCKED ");
-						break;
                     default:
 						color = C_RED;
 						strcpy(string, " YO WTF? ");
