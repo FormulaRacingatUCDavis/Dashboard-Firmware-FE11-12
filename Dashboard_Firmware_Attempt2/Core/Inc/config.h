@@ -19,7 +19,7 @@
 
 //in percent:
 #define APPS1_BSPD_THRESHOLD 25
-#define APPS1_BSPD_RESET 5
+#define APPS1_BSPD_RESET_THRESHOLD 5
 #define DEADZONE_PERCENTAGE 5
 
 //in raw ADC:

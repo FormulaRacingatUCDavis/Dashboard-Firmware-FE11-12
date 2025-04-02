@@ -37,6 +37,7 @@
 #include "driver_input.h"
 #include "ugui.h"
 #include "serial_print.h"
+#include "config.h"
 
 
 /* USER CODE END Includes */
@@ -149,6 +150,8 @@ WheelSpeedPW_t front_right_wheel_speed_t;
 WheelSpeed_t front_left_wheel_speed_t;
 
 uint16_t sg_adc;
+
+unsigned int discrepancy_timer_ms = 0;
 
 // TEST END
 
@@ -1071,8 +1074,26 @@ void MainEntry(void *argument)
 
 	update_sensor_vals(&hadc1, &hadc3);
 
-	can_tx_vcu_state(&hcan1);
+	/*
+	 * T.4.2.5 in FSAE 2022 rulebook
+	 * If an implausibility occurs between the values of the APPSs and
+	 * persists for more than 100 msec, the power to the Motor(s) must
+	 * be immediately stopped completely.
+	 *
+	 * It is not necessary to Open the Shutdown Circuit, the motor
+	 * controller(s) stopping the power to the Motor(s) is sufficient.
+	 */
+	if (has_discrepancy()) {
+		discrepancy_timer_ms += TMR1_PERIOD_MS;
+		if (discrepancy_timer_ms > MAX_DISCREPANCY_MS && state == DRIVE) {
+			report_fault(SENSOR_DISCREPANCY);
+		}
+	} else {
+		discrepancy_timer_ms = 0;
+	}
 
+	// Transmit CAN messages
+	can_tx_vcu_state(&hcan1);
 	can_tx_torque_request(&hcan1);
 
 	// update front wheel speeds
@@ -1109,7 +1130,6 @@ void MainEntry(void *argument)
 //		  report_fault(MC_FAULT);
 //	  }
 
-
 	if (mc_fault) {
 		can_clear_MC_fault(&hcan1);
 	//  if (mc_fault_clear_success) {
@@ -1118,7 +1138,6 @@ void MainEntry(void *argument)
 	}
 
 	Xsens_Update(&huart4);
-	print("main");
 
 	switch (state) {
 		case LV:
@@ -1129,17 +1148,6 @@ void MainEntry(void *argument)
 				report_fault(UNCALIBRATED);
 				break;
 			}
-
-			//if (drive_switch()) {
-			  // Drive switch should not be enabled during LV
-			  //report_fault(DRIVE_REQUEST_FROM_LV);
-			  //break;
-			//}
-
-//			if (is_button_enabled(DRIVE_BUTTON)) {
-//				// cannot request drive in LV
-//				report_fault(DRIVE_REQUEST_FROM_LV);
-//			}
 
 			if (is_button_enabled(HV_BUTTON)) {
 				add_apps_deadzone();
@@ -1170,35 +1178,38 @@ void MainEntry(void *argument)
 
 			break;
 		case HV_ENABLED:
+			// driver turned off HV
 			if (!is_button_enabled(HV_BUTTON)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
 				change_state(LV);
 				break;
 			}
+
+			// driver attempt to go to drive mode
 			if (is_button_enabled(DRIVE_BUTTON)) {
 				if (brake_mashed()) {
 					change_state(DRIVE);
 				}
-//				else {
-//					// Driver didn't press pedal
-//					report_fault(BRAKE_NOT_PRESSED);
-//				}
+				else {
+					// driver didn't press brake
+					report_fault(BRAKE_NOT_PRESSED);
+				}
 			}
 
 			break;
 		case DRIVE:
+			// driver turned off drive
 			if (!is_button_enabled(DRIVE_BUTTON)) {
 				change_state(HV_ENABLED);
 				break;
 			}
 
 			if (!is_button_enabled(HV_BUTTON)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
-				// HV turned off, so can't drive
-				// or capacitor dropped below threshold
+				// driver turned off HV
 				change_state(LV);
 				break;
 			}
 
-			if (brake_implausible()) {
+			if (is_brake_implausible()) {
 				report_fault(BRAKE_IMPLAUSIBLE);
 			}
 
@@ -1239,7 +1250,7 @@ void MainEntry(void *argument)
 						break;
 					}
 
-					if (!brake_implausible()){
+					if (!is_brake_implausible()){
 						change_state(DRIVE);
 						break;
 					}
@@ -1252,9 +1263,9 @@ void MainEntry(void *argument)
 					break;
 				case HARD_BSPD:
 				  //should not be recoverable, but let hardware decide this
-			//					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
-			//						  change_state(LV);
-			//			  		  }
+//					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
+//						  change_state(LV);
+//			  		  }
 					break;
 
 				case UNCALIBRATED:

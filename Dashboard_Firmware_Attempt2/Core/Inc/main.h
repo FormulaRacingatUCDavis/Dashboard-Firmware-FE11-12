@@ -53,8 +53,6 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-uint8_t hv_switch();
-uint8_t drive_switch();
 uint8_t shutdown_closed();
 uint8_t traction_control_enable();
 

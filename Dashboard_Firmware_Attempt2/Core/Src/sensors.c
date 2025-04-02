@@ -27,8 +27,6 @@ uint16_t get_max_torque(uint32_t max_power);
 uint32_t get_max_power();
 //extern void Error_Handler();
 
-/************ Timer ************/
-unsigned int discrepancy_timer_ms = 0;
 
 void init_sensors(){
     throttle1.min = 0x7FFF;
@@ -137,28 +135,6 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
     brake.raw = get_adc_conversion(hadc3, BSE);
     update_percent(&brake);
     torque_percentage = get_adc_conversion(hadc1, KNOB2) * 100 / 4095;
-
-//    char * str;
-//    	  sprintf(str, "min1: %ld, max1: %ld, min2: %ld, max2: %ld, minb: %ld, maxb: %ld", throttle1.min, throttle1.max, throttle2.min, throttle2.max, brake.min, brake.max);
-//    	  UG_PutColorString(2, 3, str, C_GREEN, C_BLACK);
-
-    /*
-     * T.4.2.5 in FSAE 2022 rulebook
-     * If an implausibility occurs between the values of the APPSs and
-     * persists for more than 100 msec, the power to the Motor(s) must
-     * be immediately stopped completely.
-     *
-     * It is not necessary to Open the Shutdown Circuit, the motor
-     * controller(s) stopping the power to the Motor(s) is sufficient.
-     */
-    if (has_discrepancy()) {
-        discrepancy_timer_ms += TMR1_PERIOD_MS;
-        if (discrepancy_timer_ms > MAX_DISCREPANCY_MS && state == DRIVE) {
-            report_fault(SENSOR_DISCREPANCY);
-        }
-    } else {
-        discrepancy_timer_ms = 0;
-    }
 }
 
 uint16_t requested_throttle(){
@@ -239,11 +215,11 @@ bool has_discrepancy() {
 
 // check for soft BSPD
 // see EV.4.7 of FSAE 2024 rulebook
-bool brake_implausible() {
+bool is_brake_implausible() {
     if (error == BRAKE_IMPLAUSIBLE) {
         // once brake implausibility detected,
-        // can only revert to normal if throttle unapplied
-        return !(throttle2.percent <= APPS1_BSPD_RESET);
+        // can only revert to normal if throttle "unapplied"
+        return !(throttle2.percent <= APPS1_BSPD_RESET_THRESHOLD);
     }
 
     // if both brake and throttle applied, brake implausible

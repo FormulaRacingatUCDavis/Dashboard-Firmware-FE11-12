@@ -62,7 +62,7 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3);
 
 bool sensors_calibrated();
 bool has_discrepancy();
-bool brake_implausible();
+bool is_brake_implausible();
 bool braking();
 bool brake_mashed();
 
