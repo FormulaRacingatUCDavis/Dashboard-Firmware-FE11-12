@@ -1064,9 +1064,11 @@ void MainEntry(void *argument)
 	// display
 	Display_Update();
 
-	// telem
+	// send data to ESP32
 	telem_send();
 	//write_rx_to_sd();
+
+
 
 	//char sstr[100];
 	//	  sprintf(sstr, "apps1: %d, apps2: %d, bse: %d      ", throttle1.percent, throttle2.percent, brake.percent);
@@ -1278,7 +1280,7 @@ void MainEntry(void *argument)
 					}
 					break;
 
-				default:  // DRIVE_REQUEST_FROM_LV, CONSERVATIVE_TIMER_MAXED, HV_DISABLED_WHILE_DRIVING, MC FAULT
+				default:  // CONSERVATIVE_TIMER_MAXED, MC FAULT
 					if (!is_button_enabled(HV_BUTTON) && !is_button_enabled(DRIVE_BUTTON)) {
 						change_state(LV);
 					}
