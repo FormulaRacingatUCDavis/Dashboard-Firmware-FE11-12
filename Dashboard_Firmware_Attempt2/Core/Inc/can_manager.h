@@ -21,8 +21,8 @@ typedef enum {
     TORQUE_REQUEST = 0x0C0,
 //    BMS_STATUS_MSG = 0x380,
 //    PEI_CURRENT_SHUTDOWN = 0x387,
-	PEI_STATUS = 0x387,
-	BMS_STATUS = 0x380,
+	PEI_STATUS_MSG = 0x387,
+	BMS_STATUS_MSG = 0x380,
 	DIAGNOSTIC_BMS_DATA = 0x381,
     MC_VOLTAGE_INFO = 0x0A7,
     MC_INTERNAL_STATES = 0xAA,
@@ -30,11 +30,12 @@ typedef enum {
 	MC_PARAM_COMMAND = 0x0C1,
 	MC_PARAM_RESPONSE = 0x0C2,
 	MC_MOTOR_POSITION = 0x0A5,
-    WHEEL_SPEED_REAR = 0x401,
 	MC_TEMP_1 = 0xA0,
 	MC_TEMP_3 = 0x0A2,
 	MC_INTERNAL_VOLTS = 0x0A9,
 	COOLING_LOOP = 0x400,
+	WHEEL_SPEED_REAR = 0x401,
+	COOLING_LOOP_PRESSURES = 0x402,
 	STRAIN_GAUGE_REAR = 0x403,
 	MC_INTERNAL_CURRENTS = 0x0A6
 } CAN_ID;
@@ -48,7 +49,7 @@ extern volatile uint8_t switches;
 extern volatile uint8_t PACK_TEMP;
 extern volatile uint8_t mc_fault;
 extern volatile uint8_t soc;
-extern volatile uint16_t bms_status;
+extern volatile uint8_t bms_status;
 extern volatile uint8_t mc_fault_clear_success;
 extern volatile uint16_t pack_voltage;
 extern volatile uint16_t motor_temp;

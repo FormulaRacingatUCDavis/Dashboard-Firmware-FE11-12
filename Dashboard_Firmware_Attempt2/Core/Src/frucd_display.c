@@ -90,7 +90,7 @@ UG_GUI gui1963;
 void draw_speed(uint32_t fl_wheel_speed, uint32_t fr_wheel_speed);
 void draw_soc(uint16_t soc);
 void draw_bms_temp(uint16_t temp);
-void draw_state(uint8_t state, uint16_t bms_status);
+void draw_state(uint8_t state, uint8_t bms_status);
 void draw_glv_v(int16_t glv_v);
 void draw_mc_fault_state(uint8_t mc_fault_state);
 void draw_motor_temp(uint16_t motor_temp);
@@ -424,7 +424,7 @@ void draw_shutdown(uint8_t shutdown) {
 
 }
 
-void draw_state(uint8_t state, uint16_t bms_status)
+void draw_state(uint8_t state, uint8_t bms_status)
 {
     static uint8_t last_state = 255;
     static uint16_t last_bms_status;
@@ -444,14 +444,6 @@ void draw_state(uint8_t state, uint16_t bms_status)
             color = C_RED;
             strcpy(string, " BMS TEMP ");
             break;
-        case LOW_SOC:
-            color = C_RED;
-            strcpy(string, " LOW SOC ");
-            break;
-        case IMBALANCE:
-            color = C_RED;
-            strcpy(string, "IMBALANCE");
-            break;
         case SPI_FAULT:
             color = C_RED;
             strcpy(string, "SPI FAULT");
@@ -464,6 +456,15 @@ void draw_state(uint8_t state, uint16_t bms_status)
             color = C_RED;
             strcpy(string, "UNDERVOLT");
             break;
+        case OPEN_WIRE:
+        	color = C_RED;
+			strcpy(string, " OPEN WIRE ");
+			break;
+        case MISMATCH:
+			color = C_RED;
+			strcpy(string, " MISMATCH ");
+			break;
+
         default:
             // check fault bit
             if (state & 0x80) {

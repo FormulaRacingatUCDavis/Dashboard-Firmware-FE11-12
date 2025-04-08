@@ -1115,9 +1115,6 @@ void MainEntry(void *argument)
 		traction_control_PID(front_right_wheel_speed, front_left_wheel_speed);
 	}
 
- 	//sprintf(sstr, "trq: %lu, slip rat: %.2f", torque_req, current_slip_ratio);
-	//UG_PutString(5, 1, sstr);
-
 	// If shutdown circuit opens in any state
 	if (!shutdown_closed()) {
 		report_fault(SHUTDOWN_CIRCUIT_OPEN);
@@ -1128,16 +1125,16 @@ void MainEntry(void *argument)
 	  report_fault(HARD_BSPD);
 	}
 
-//	  if (mc_fault) {
-//		  report_fault(MC_FAULT);
-//	  }
-
 	if (mc_fault) {
-		can_clear_MC_fault(&hcan1);
-	//  if (mc_fault_clear_success) {
-		// init_fault_cleared = 1;
-	//  }
+	  report_fault(MC_FAULT);
 	}
+
+//	if (mc_fault) {
+//		can_clear_MC_fault(&hcan1);
+//	//  if (mc_fault_clear_success) {
+//		// init_fault_cleared = 1;
+//	//  }
+//	}
 
 	Xsens_Update(&huart4);
 
@@ -1265,9 +1262,9 @@ void MainEntry(void *argument)
 					break;
 				case HARD_BSPD:
 				  //should not be recoverable, but let hardware decide this
-//					  if (!HAL_GPIO_ReadPin(BSPD_LATCH) {
-//						  change_state(LV);
-//			  		  }
+				  if (!HAL_GPIO_ReadPin(HARD_BSPD_GPIO_Port, HARD_BSPD_Pin)) {
+					  change_state(LV);
+				  }
 					break;
 
 				case UNCALIBRATED:
@@ -1279,11 +1276,18 @@ void MainEntry(void *argument)
 						break;
 					}
 					break;
-
-				default:  // CONSERVATIVE_TIMER_MAXED, MC FAULT
-					if (!is_button_enabled(HV_BUTTON) && !is_button_enabled(DRIVE_BUTTON)) {
+				case MC_FAULT:
+					if (!mc_fault) {
 						change_state(LV);
 					}
+					break;
+				case PRECHARGE_TIMEOUT:
+					// give time for fault message to show on display before going to LV
+					if ((HAL_GetTick() - precharge_tick_start) > PRECHARGE_TIMEOUT_MS+1000) {
+						change_state(LV);
+					}
+					break;
+				default:
 					break;
 			}
 		break;
@@ -1341,15 +1345,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
 	if (htim->Instance == TIM7) {
-//		if (state == PRECHARGING) {
-//			precharge_timer_ms += TMR1_PERIOD_MS;
-//		}
-//		if (precharge_timer_ms > PRECHARGE_TIMEOUT_MS) {
-//		  report_fault(CONSERVATIVE_TIMER_MAXED);
-//		}
-//		else {
-//			precharge_timer_ms = 0;
-//		}
+
 	}
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {

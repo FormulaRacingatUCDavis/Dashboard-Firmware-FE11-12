@@ -12,7 +12,7 @@ volatile uint8_t switches = 0xC0;   //start with switches on to stay in startup 
 volatile uint8_t PACK_TEMP;
 volatile uint8_t mc_fault;
 volatile uint8_t soc;
-volatile uint16_t bms_status;
+volatile uint8_t bms_status;
 volatile uint8_t mc_fault_clear_success = 0;
 volatile uint16_t pack_voltage;
 volatile uint16_t motor_temp;
@@ -49,13 +49,18 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
     // gets message and updates values
 	switch (rxHeader.StdId) {
 		case BMS_STATUS_MSG:
+			bms_status = rxData[0];
+			sd_card_write_can_rx(rxHeader, rxData);
+			break;
+		case DIAGNOSTIC_BMS_DATA:
 			PACK_TEMP = rxData[0];
 			soc = rxData[1];
-			bms_status = (rxData[2] << 8);
-			bms_status += rxData[3];
-			pack_voltage = (rxData[4] << 8);
-			pack_voltage += rxData[5];
-
+			pack_voltage = (rxData[2] << 8);
+			pack_voltage += rxData[3];
+			sd_card_write_can_rx(rxHeader, rxData);
+			break;
+		case PEI_STATUS_MSG:
+			shutdown_flags = rxData[0];
 			sd_card_write_can_rx(rxHeader, rxData);
 			break;
 		case MC_VOLTAGE_INFO:
@@ -84,26 +89,22 @@ static void save_can_rx_data(CAN_RxHeaderTypeDef rxHeader, uint8_t rxData[]) {
 			mc_state_msg_counter %= 50;
 
 			break;
-		case PEI_CURRENT_SHUTDOWN:
-			shutdown_flags = rxData[2];
-			sd_card_write_can_rx(rxHeader, rxData);
-			break;
 		case MC_FAULT_CODES:
-			static uint8_t mc_fault_msg_counter = 0;
-
-			if (mc_fault_msg_counter == 0)
-				sd_card_write_can_rx(rxHeader, rxData);
-
-			++mc_fault_msg_counter;
-			mc_fault_msg_counter %= 50;
-
+			static uint8_t first_fault = 1;
 			for (uint8_t i = 0; i < 8; ++i) {
 				if (rxData[i] > 0) {
 					mc_fault = 1;
+
+					if (first_fault) {
+						sd_card_write_can_rx(rxHeader, rxData);
+						first_fault = 0;
+					}
+
 					break;
 				}
 				else {
 					mc_fault = 0;
+					first_fault = 1;
 				}
 			}
 			break;
