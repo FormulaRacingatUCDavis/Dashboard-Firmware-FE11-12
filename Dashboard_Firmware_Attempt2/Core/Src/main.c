@@ -79,6 +79,7 @@ UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_uart4_rx;
+DMA_HandleTypeDef hdma_uart4_tx;
 
 SRAM_HandleTypeDef hsram1;
 
@@ -822,6 +823,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  /* DMA1_Stream4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
@@ -983,7 +987,7 @@ void MainEntry(void *argument)
 	Display_DriveTemplate();
 
 	// FIXME temp for driver practice, should be called on button press instead?
-	 initialize_start_coordinates();
+	 //initialize_start_coordinates();
 
 	if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK) {
 	  Error_Handler();
@@ -1063,9 +1067,21 @@ void MainEntry(void *argument)
 	//  }
 	}
 
-	Xsens_Update(&huart4);
+	//Xsens_Update(&huart4);
+	log_xsens(&huart4, &huart3);
+//	uint8_t TEMP_rx_buf[20];
+//	if (__HAL_UART_GET_FLAG(&huart4, UART_FLAG_ORE)) {
+//		__HAL_UART_CLEAR_OREFLAG(&huart4);
+//	}
+//	if (HAL_UART_Receive(&huart4, TEMP_rx_buf, 20, 1000)==HAL_OK) {
+//		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+//		print(TEMP_rx_buf);
+//	}
 
-	driver_practice_update();
+
+
+
+	//driver_practice_update();
 
 	switch (state) {
 		case LV_LOCK:

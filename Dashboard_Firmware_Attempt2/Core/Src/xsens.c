@@ -18,7 +18,7 @@
 
 extern CAN_HandleTypeDef hcan1;
 
-#define BUFLEN 200
+#define BUFLEN 20
 
 #define HI8(x) ((x>>8)&0xFF)
 #define LO8(x) (x&0xFF);
@@ -52,10 +52,8 @@ void Xsens_Update(UART_HandleTypeDef* h_uart){
 	uint32_t b = Serial_BytesAvailable(&serial);
 	for(uint32_t i = 0; i < b; i++){
 		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
-		Serial_GetByte(&serial);
-//		 xsens_mti_parse(&imu_interface, );
+		xsens_mti_parse(&imu_interface, Serial_GetByte(&serial));
 		 print(rx_buf);
-
 	}
 }
 
@@ -65,21 +63,31 @@ void log_xsens(UART_HandleTypeDef* xsens_uart, UART_HandleTypeDef* log_uart) {
 	static Serial_t serial;
 	static uint8_t rx_buf[BUFLEN];
 
+	//print(rx_buf);
+
 	if (first_run) {
 		Serial_Init(&serial, xsens_uart, rx_buf, BUFLEN);
 		Serial_StartListening(&serial);
 		first_run = false;
 	}
 
+	if (__HAL_UART_GET_FLAG(xsens_uart, UART_FLAG_ORE)) {
+		__HAL_UART_CLEAR_OREFLAG(xsens_uart);
+	}
+
 	uint32_t b = Serial_BytesAvailable(&serial);
 	char byte_num_buffer[64];
-	 sprintf(byte_num_buffer, "Bytes available: %d\n", b);
+	if (b == 0) {
+		sprintf(byte_num_buffer, "No bytes available\n");
+	} else {
+		sprintf(byte_num_buffer, "Bytes available: %d\n", b);
+	}
 	 HAL_UART_Transmit(log_uart, byte_num_buffer, strlen(byte_num_buffer), 6000);
 
 	for(uint32_t i = 0; i < b; i++){
 	 HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
 	 char byte_buffer[64];
-	 sprintf(byte_buffer, "Byte received: %d\n", Serial_GetByte(&serial));
+	 sprintf(byte_buffer, "Byte read: %d\n", Serial_GetByte(&serial));
 	 HAL_UART_Transmit(log_uart, byte_buffer, strlen(byte_buffer), 6000);
 	}
 }
@@ -166,6 +174,9 @@ void imu_callback(XsensEventFlag_t event, XsensEventData_t *mtdata)
 
         case XSENS_EVT_LAT_LON:
         	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+			xsens_latitude = mtdata->data.f4x2[0];
+			xsens_longitude = mtdata->data.f4x2[1];
+
         	break;
 
         default:
