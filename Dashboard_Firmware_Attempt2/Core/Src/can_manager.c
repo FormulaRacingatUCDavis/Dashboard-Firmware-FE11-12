@@ -379,4 +379,6 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 //	write_tx_to_sd(TxHeader, data_tx_param_command);
 }
 
-
+void can_tx_override_cooling_request(CAN_HandleTypeDef *hcan, uint8_t data) {
+	CAN_Send(hcan, 0xA51, data, 1);
+}

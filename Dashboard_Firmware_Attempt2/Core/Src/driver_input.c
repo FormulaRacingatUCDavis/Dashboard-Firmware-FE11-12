@@ -10,8 +10,12 @@
 #include "frucd_display.h"
 #include "ugui.h"
 #include "sd_card.h"
+#include "can_manager.h"
 
 #define NUM_BUTTONS 6
+
+uint8_t is_overriding_cooling = 0;
+extern CAN_HandleTypeDef hcan2;
 
 typedef struct {
 	volatile uint32_t last_valid_pressed_time;
@@ -76,6 +80,17 @@ void on_button_enabled(button_id_t enabled_id) {
 		case OVERTAKE_BUTTON:
 			sprintf(disp_str, "OVT");
 			UG_PutString(50, 250, disp_str);
+
+			// if in debug mode, use overtake button for cooling loop override
+			if (is_button_enabled(DEBUG_BUTTON)) {
+				if (is_overriding_cooling == 1) { // if already overriding, stop overriding
+					is_overriding_cooling = 0;
+				} else { // else, start overriding
+					is_overriding_cooling = 1;
+				}
+				can_tx_override_cooling_request(&hcan2, is_overriding_cooling);
+			}
+
 			break;
 		case HV_BUTTON:
 			// turn on LED
