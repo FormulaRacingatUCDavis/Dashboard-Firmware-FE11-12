@@ -19,8 +19,6 @@ typedef enum {
 	DEBUG_BUTTON,
 	MARKER_BUTTON,
 	OVERTAKE_BUTTON,
-	HV_BUTTON,
-	DRIVE_BUTTON
 } button_id_t;
 
 void driver_input_update();
@@ -29,8 +27,11 @@ uint8_t is_button_enabled(button_id_t button_id);
 
 /************ Switches ************/
 
-//uint8_t hv_switch();
-//uint8_t drive_switch();
+typedef enum {
+	HV_SWITCH,
+	DRIVE_SWITCH
+} switch_id_t;
 
+uint8_t is_switch_on(switch_id_t switch_id);
 
 #endif /* INC_DRIVER_INPUT_H_ */

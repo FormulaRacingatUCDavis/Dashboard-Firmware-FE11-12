@@ -28,8 +28,6 @@ button_state_t button_states[NUM_BUTTONS] = {
 	{last_valid_pressed_time: 0, enabled: 0}, // debug
 	{last_valid_pressed_time: 0, enabled: 0}, // marker
 	{last_valid_pressed_time: 0, enabled: 0}, // overtake
-	{last_valid_pressed_time: 0, enabled: 0}, // HV
-	{last_valid_pressed_time: 0, enabled: 0} // drive
 };
 
 button_id_t which_button_pressed() {
@@ -44,12 +42,6 @@ button_id_t which_button_pressed() {
 	}
 	if (!HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_9)) {
 		return OVERTAKE_BUTTON;
-	}
-	if (!HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_13)) {
-		return HV_BUTTON;
-	}
-	if (!HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_14)) {
-		return DRIVE_BUTTON;
 	}
 	return NO_BUTTON;
 
@@ -92,12 +84,6 @@ void on_button_enabled(button_id_t enabled_id) {
 			}
 
 			break;
-		case HV_BUTTON:
-			// turn on LED
-			break;
-		case DRIVE_BUTTON:
-			// turn on LED
-			break;
 		default:
 
 	}
@@ -120,12 +106,6 @@ void on_button_disabled(button_id_t disabled_id) {
 		case OVERTAKE_BUTTON:
 			sprintf(disp_str, "   ");
 			UG_PutString(50, 250, disp_str);
-			break;
-		case HV_BUTTON:
-			// turn off LED
-			break;
-		case DRIVE_BUTTON:
-			// turn off LED
 			break;
 		default:
 	}
@@ -156,6 +136,12 @@ void driver_input_update() {
 			}
 		}
 	}
+}
+
+uint8_t is_switch_on(switch_id_t switch_id) {
+	if (switch_id == HV_SWITCH) { return !HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_13); }
+	if (switch_id == DRIVE_SWITCH) { return !HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_14); }
+	return 0;
 }
 
 //uint8_t hv_switch() {

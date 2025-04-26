@@ -1148,7 +1148,7 @@ void MainEntry(void *argument)
 				break;
 			}
 
-			if (is_button_enabled(HV_BUTTON)) {
+			if (is_switch_on(HV_SWITCH)) {
 				add_apps_deadzone();
 				precharge_tick_start = HAL_GetTick();
 				change_state(PRECHARGING);
@@ -1158,7 +1158,7 @@ void MainEntry(void *argument)
 			break;
 		case PRECHARGING:
 			// Driver turned off HV via button
-			if (!is_button_enabled(HV_BUTTON)) {
+			if (!is_switch_on(HV_SWITCH)) {
 				change_state(LV);
 				break;
 			}
@@ -1178,13 +1178,13 @@ void MainEntry(void *argument)
 			break;
 		case HV_ENABLED:
 			// driver turned off HV
-			if (!is_button_enabled(HV_BUTTON)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
+			if (!is_switch_on(HV_SWITCH)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
 				change_state(LV);
 				break;
 			}
 
 			// driver attempt to go to drive mode
-			if (is_button_enabled(DRIVE_BUTTON)) {
+			if (is_switch_on(DRIVE_SWITCH)) {
 				if (brake_mashed()) {
 					change_state(DRIVE);
 				}
@@ -1197,12 +1197,12 @@ void MainEntry(void *argument)
 			break;
 		case DRIVE:
 			// driver turned off drive
-			if (!is_button_enabled(DRIVE_BUTTON)) {
+			if (!is_switch_on(DRIVE_SWITCH)) {
 				change_state(HV_ENABLED);
 				break;
 			}
 
-			if (!is_button_enabled(HV_BUTTON)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
+			if (!is_switch_on(HV_SWITCH)) {// || capacitor_volt < PRECHARGE_THRESHOLD) { // don't really need volt check by rules
 				// driver turned off HV
 				change_state(LV);
 				break;
@@ -1216,12 +1216,12 @@ void MainEntry(void *argument)
 		case FAULT:
 			switch (error) {
 				case BRAKE_NOT_PRESSED:
-					if (!is_button_enabled(HV_BUTTON)){
+					if (!is_switch_on(HV_SWITCH)){
 						change_state(LV);
 						break;
 					}
 
-					if (!is_button_enabled(DRIVE_BUTTON)) {
+					if (!is_switch_on(DRIVE_SWITCH)) {
 						// reset drive switch and try again
 						change_state(HV_ENABLED);
 					}
@@ -1229,22 +1229,22 @@ void MainEntry(void *argument)
 				case SENSOR_DISCREPANCY:
 					// stop power to motors if discrepancy persists for >100ms
 					// see rule T.4.2.5 in FSAE 2022 rulebook
-					if (!is_button_enabled(DRIVE_BUTTON)) {
+					if (!is_switch_on(DRIVE_SWITCH)) {
 						discrepancy_timer_ms = 0;
 						change_state(HV_ENABLED);
 					}
 
-					if (!is_button_enabled(HV_BUTTON))
+					if (!is_switch_on(HV_SWITCH))
 						change_state(LV);
 
 					break;
 				case BRAKE_IMPLAUSIBLE:
-					if (!is_button_enabled(HV_BUTTON)){
+					if (!is_switch_on(HV_SWITCH)){
 						change_state(LV);
 						break;
 					}
 
-					if (!is_button_enabled(DRIVE_BUTTON)){
+					if (!is_switch_on(DRIVE_SWITCH)){
 						change_state(HV_ENABLED);
 						break;
 					}
