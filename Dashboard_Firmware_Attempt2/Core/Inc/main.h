@@ -59,12 +59,6 @@ uint8_t traction_control_enable();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define HARD_BSPD_Pin GPIO_PIN_2
-#define HARD_BSPD_GPIO_Port GPIOE
-#define CARD_DETECT_Pin GPIO_PIN_1
-#define CARD_DETECT_GPIO_Port GPIOF
-#define BUZZER_Pin GPIO_PIN_2
-#define BUZZER_GPIO_Port GPIOF
 #define BSE_Pin GPIO_PIN_5
 #define BSE_GPIO_Port GPIOF
 #define ESP32_UART_RX_Pin GPIO_PIN_6
