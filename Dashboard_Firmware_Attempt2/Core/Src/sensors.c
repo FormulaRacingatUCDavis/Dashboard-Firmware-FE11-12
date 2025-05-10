@@ -17,6 +17,8 @@ CALIBRATED_SENSOR_t brake;
 uint32_t torque_percentage = 0;
 uint32_t torque_req = 0;
 
+extern UART_HandleTypeDef huart3;
+
 #define RADS_PER_RPM 0.10472
 #define MAX_TORQUE_OVERTAKE (uint16_t)(MAX_TORQUE_NM * 0.8)
 
@@ -196,7 +198,11 @@ bool braking(){
 }
 
 bool brake_mashed(){
-    return brake.percent > RTD_BRAKE_THRESHOLD;
+	char buffer[48];
+	int ret = sprintf(buffer, "Pressed brake? %d\n", (int)brake.percent);
+	HAL_UART_Transmit(&huart3, buffer, ret, 1000);
+
+	return brake.percent > RTD_BRAKE_THRESHOLD;
 }
 
 // check differential between the throttle sensors

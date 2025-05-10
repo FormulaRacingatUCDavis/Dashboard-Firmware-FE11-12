@@ -16,6 +16,7 @@
 
 uint8_t is_overriding_cooling = 0;
 extern CAN_HandleTypeDef hcan2;
+extern UART_HandleTypeDef huart3;
 
 typedef struct {
 	volatile uint32_t last_valid_pressed_time;
@@ -123,6 +124,10 @@ void driver_input_update() {
 		// enable feature after button stays "pressed" long enough, avoids oscillating presses
 		// less of an issue if electrical implemented hardware button debouncing :(
 		if (time_diff > BUTTON_DELAY) {
+			char buffer[48];
+			int ret = sprintf(buffer, "Pressed button %d\n", (int32_t)pressed_btn_id);
+			HAL_UART_Transmit(&huart3, buffer, ret, 1000);
+
 			button_states[pressed_btn_id].last_valid_pressed_time = HAL_GetTick();
 
 			if (button_states[pressed_btn_id].enabled) {
