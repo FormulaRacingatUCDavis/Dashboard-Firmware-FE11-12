@@ -38,7 +38,7 @@
 // drivetrain efficiency, n_drv = 0.9 (90%)
 // max power draw from motor, p_motor = p_acc * n_drv = 80kW * 0.9 = 72kW
 // leave some gap, use a number lower than 72kW
-#define MAX_POWER_MOTOR_W 66000
-#define MAX_POWER_ACCUMULATOR_W 79000
+#define MAX_POWER_MOTOR_W 60000
+#define MAX_POWER_ACCUMULATOR_W 70000
 
 #endif

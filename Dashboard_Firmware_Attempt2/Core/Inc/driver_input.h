@@ -23,6 +23,7 @@ typedef enum {
 
 void driver_input_update();
 uint8_t is_button_enabled(button_id_t button_id);
+button_id_t which_button_pressed();
 
 
 /************ Switches ************/

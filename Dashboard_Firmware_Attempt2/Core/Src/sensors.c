@@ -14,9 +14,11 @@
 CALIBRATED_SENSOR_t throttle1;
 CALIBRATED_SENSOR_t throttle2;
 CALIBRATED_SENSOR_t brake;
-uint32_t torque_percentage = 0;
-uint32_t launch_control_param = 0;
-uint32_t torque_req = 0;
+volatile uint32_t torque_percentage = 0;
+volatile uint32_t launch_control_param = 0;
+volatile uint32_t prev_torque_percentage = 0;
+volatile uint32_t prev_launch_control_param = 0;
+volatile uint32_t torque_req = 0;
 
 #define RADS_PER_RPM 0.10472
 #define MAX_TORQUE_OVERTAKE (uint16_t)(MAX_TORQUE_NM * 0.8)
@@ -141,6 +143,8 @@ void update_sensor_vals(ADC_HandleTypeDef *hadc1, ADC_HandleTypeDef *hadc3) {
     update_percent(&brake);
 
     // knobs
+    prev_torque_percentage = torque_percentage;
+	prev_launch_control_param = launch_control_param;
     torque_percentage = get_adc_conversion(hadc1, KNOB2) * 100 / 4095;
     launch_control_param = get_adc_conversion(hadc1, KNOB1) * 100 / 4095;
 }

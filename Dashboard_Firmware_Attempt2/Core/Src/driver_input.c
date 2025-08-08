@@ -12,9 +12,10 @@
 #include "sd_card.h"
 #include "can_manager.h"
 
-#define NUM_BUTTONS 6
+#define NUM_BUTTONS 4
 
 uint8_t is_overriding_cooling = 0;
+extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 
 typedef struct {
@@ -27,7 +28,7 @@ button_state_t button_states[NUM_BUTTONS] = {
 	{last_valid_pressed_time: 0, enabled: 0}, // TC
 	{last_valid_pressed_time: 0, enabled: 0}, // debug
 	{last_valid_pressed_time: 0, enabled: 0}, // marker
-	{last_valid_pressed_time: 0, enabled: 0}, // overtake
+	{last_valid_pressed_time: 0, enabled: 0} // overtake
 };
 
 button_id_t which_button_pressed() {
@@ -59,6 +60,7 @@ void on_button_enabled(button_id_t enabled_id) {
 	switch (enabled_id) {
 		case DEBUG_BUTTON:
 			Display_DebugTemplate();
+			can_tx_knobs(&hcan1);
 			break;
 		case TC_BUTTON:
 			sprintf(disp_str, "TC ");
@@ -94,6 +96,7 @@ void on_button_disabled(button_id_t disabled_id) {
 	switch (disabled_id) {
 		case DEBUG_BUTTON:
 			Display_DriveTemplate();
+			can_tx_knobs(&hcan1);
 			break;
 		case TC_BUTTON:
 			sprintf(disp_str, "   ");

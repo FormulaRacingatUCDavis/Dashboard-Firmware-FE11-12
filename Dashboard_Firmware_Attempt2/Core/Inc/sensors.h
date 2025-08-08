@@ -40,7 +40,7 @@ typedef struct{
 extern CALIBRATED_SENSOR_t throttle1;
 extern CALIBRATED_SENSOR_t throttle2;
 extern CALIBRATED_SENSOR_t brake;
-extern uint32_t torque_percentage;
+extern volatile uint32_t torque_percentage;
 
 typedef enum {
 	APPS1,

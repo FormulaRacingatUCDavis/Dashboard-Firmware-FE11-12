@@ -2,6 +2,7 @@
 #include "sd_card.h"
 #include "serial_print.h"
 #include "traction_control.h"
+#include "driver_input.h"
 
 volatile uint8_t mc_lockout;
 volatile uint8_t mc_enabled;
@@ -32,6 +33,9 @@ volatile int16_t outlet_pres = 0;
 volatile uint16_t telem_id = 0;
 volatile uint16_t sg_rear = 0;
 volatile uint16_t max_power = 0;
+
+extern volatile uint32_t torque_percentage;
+extern volatile uint32_t launch_control_param;
 
 static CAN_RxHeaderTypeDef RxHeader;
 static uint8_t RxData[8];
@@ -282,12 +286,18 @@ void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc){
 	TxHeader.RTR = CAN_RTR_DATA;
 	TxHeader.DLC = 6;
 	uint8_t data_tx_state[6] = {
-		(adc >> 8) & 0xFF,
-		(adc & 0xFF),
-		front_right_wheel_speed >> 8,
-		front_right_wheel_speed & 0xff,
-		TC_torque_req  >> 8,
-		TC_torque_req & 0xff,
+//		(adc >> 8) & 0xFF,
+//		(adc & 0xFF),
+//		front_right_wheel_speed >> 8,
+//		front_right_wheel_speed & 0xff,
+//		TC_torque_req  >> 8,
+//		TC_torque_req & 0xff,
+		torque_percentage >> 8,
+		torque_percentage & 0xFF,
+		launch_control_param >> 8,
+		launch_control_param & 0xFF,
+		(uint8_t)which_button_pressed(),
+		0
     };
 
 	if (tc_sg_msg_counter >= 50) {
@@ -381,8 +391,15 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 }
 
 void can_tx_knobs(CAN_HandleTypeDef *hcan) {
-//	uint8_t data[8] = {
-//			// TODO
-//	};
-//	CAN_Send(hcan, 0x501, data, 8);
+	uint16_t torque_limit_raw = (uint16_t)(torque_percentage / 100 * 4095);
+	uint16_t launch_control_param_raw = (uint16_t)(launch_control_param / 100 * 4095);
+		uint8_t data[8] = {
+//			torque_limit_raw >> 8,
+//			torque_limit_raw & 0xFF,
+//			launch_control_param_raw >> 8,
+//			launch_control_param_raw & 0xFF,
+				0,0,0,0,
+			is_button_enabled(DEBUG_BUTTON)
+		};
+		CAN_Send(hcan, 0x501, data, 8);
 }

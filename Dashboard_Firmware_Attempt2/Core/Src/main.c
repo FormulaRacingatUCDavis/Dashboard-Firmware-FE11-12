@@ -148,6 +148,11 @@ uint16_t sg_adc;
 
 unsigned int discrepancy_timer_ms = 0;
 
+extern volatile uint32_t torque_percentage;
+extern volatile uint32_t launch_control_param;
+extern volatile uint32_t prev_torque_percentage;
+extern volatile uint32_t prev_launch_control_param;
+
 // TEST END
 
 /* USER CODE END 0 */
@@ -977,6 +982,7 @@ void MainEntry(void *argument)
 
 	// Transmit CAN messages
 	can_tx_vcu_state(&hcan1);
+	can_tx_vcu_state(&hcan2); // for telemnode
 	can_tx_torque_request(&hcan1);
 
 	// update front wheel speeds
@@ -1019,8 +1025,11 @@ void MainEntry(void *argument)
 
 	Xsens_Update(&huart4);
 
-	// TODO: make it only transmit on value change
-	// can_tx_knobs(&hcan1);
+	// send knob percents to raspi display on change
+	if (torque_percentage != prev_torque_percentage ||
+		launch_control_param != prev_launch_control_param) {
+		can_tx_knobs(&hcan1);
+	}
 
 	switch (state) {
 		case LV_LOCK:
