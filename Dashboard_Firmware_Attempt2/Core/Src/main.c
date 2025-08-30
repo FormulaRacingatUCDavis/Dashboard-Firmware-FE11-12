@@ -984,6 +984,7 @@ void MainEntry(void *argument)
 	can_tx_vcu_state(&hcan1);
 	can_tx_vcu_state(&hcan2); // for telemnode
 	can_tx_torque_request(&hcan1);
+	can_tx_throttle_raw(&hcan1);
 
 	// update front wheel speeds
 	front_right_wheel_speed = WheelSpeedPW_GetCPS(&front_right_wheel_speed_t);

@@ -37,7 +37,8 @@ typedef enum {
 	WHEEL_SPEED_REAR = 0x401,
 	COOLING_LOOP_PRESSURES = 0x402,
 	STRAIN_GAUGE_REAR = 0x403,
-	MC_INTERNAL_CURRENTS = 0x0A6
+	MC_INTERNAL_CURRENTS = 0x0A6,
+	THROTTLE_RAW = 0x502,
 } CAN_ID;
 
 extern volatile uint8_t mc_lockout;
@@ -80,6 +81,7 @@ void can_tx_disable_MC(CAN_HandleTypeDef *hcan);
 void can_clear_MC_fault(CAN_HandleTypeDef *hcan);
 void can_tx_sg(CAN_HandleTypeDef *hcan, uint16_t adc);
 void can_tx_knobs(CAN_HandleTypeDef *hcan);
+void can_tx_throttle_raw(CAN_HandleTypeDef *hcan);
 
 // might want to have all the tx functions use this more generic function
 HAL_StatusTypeDef CAN_Send(CAN_HandleTypeDef *hcan, uint32_t id, uint8_t* data, uint8_t len);

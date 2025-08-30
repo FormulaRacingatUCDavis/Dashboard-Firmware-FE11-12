@@ -403,3 +403,22 @@ void can_tx_knobs(CAN_HandleTypeDef *hcan) {
 		};
 		CAN_Send(hcan, 0x501, data, 8);
 }
+
+void can_tx_throttle_raw(CAN_HandleTypeDef *hcan) {
+	TxHeader.IDE = CAN_ID_STD;
+	TxHeader.StdId = THROTTLE_RAW;
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.DLC = 4;
+
+	uint8_t data[8] = {
+			throttle1.raw >> 8,
+			throttle1.raw & 0xFF,
+			throttle2.raw >> 8,
+			throttle2.raw & 0xFF
+	};
+
+	if (HAL_CAN_AddTxMessage(hcan, &TxHeader, data, &TxMailbox) != HAL_OK)
+	{
+	  print("CAN Tx failed\r\n");
+	}
+}
