@@ -15,7 +15,7 @@ volatile uint8_t mc_fault;
 volatile uint8_t soc;
 volatile uint8_t bms_status;
 volatile uint8_t mc_fault_clear_success = 0;
-volatile uint16_t pack_voltage;
+volatile int16_t pack_voltage;
 volatile uint16_t motor_temp;
 volatile uint16_t mc_temp;
 volatile int16_t glv_v;
@@ -323,7 +323,7 @@ void can_tx_torque_request(CAN_HandleTypeDef *hcan){
 	TxHeader.DLC = 8;
 
     uint8_t byte5 = 0b010;   //speed mode | discharge_enable | inverter enable
-    uint16_t throttle_msg_byte = 0;
+    int16_t throttle_msg_byte = 0;
     if (state == DRIVE) {
     	byte5 |= 0x01;  //set inverter enable bit
     	throttle_msg_byte = requested_throttle();

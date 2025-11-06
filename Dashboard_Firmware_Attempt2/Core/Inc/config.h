@@ -30,7 +30,7 @@
 #define RTD_BRAKE_THRESHOLD 50  //brake threshold to enter drive mode
 #define BRAKE_BSPD_THRESHOLD 30
 
-#define MAX_TORQUE_NM 230  //230 Nm
+#define MAX_TORQUE_NM 220  //220 Nm
 
 // See EV.3.3.1 of FSAE Rules 2025
 // Max power draw from accumulator must not exceed 80kW

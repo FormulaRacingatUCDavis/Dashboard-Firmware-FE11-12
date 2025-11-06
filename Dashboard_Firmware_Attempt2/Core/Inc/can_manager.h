@@ -52,7 +52,7 @@ extern volatile uint8_t mc_fault;
 extern volatile uint8_t soc;
 extern volatile uint8_t bms_status;
 extern volatile uint8_t mc_fault_clear_success;
-extern volatile uint16_t pack_voltage;
+extern volatile int16_t pack_voltage;
 extern volatile uint16_t motor_temp;
 extern volatile uint16_t mc_temp;
 extern volatile int16_t glv_v;

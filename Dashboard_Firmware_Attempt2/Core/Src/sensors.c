@@ -27,7 +27,8 @@ extern volatile uint8_t traction_control_enabled;
 extern volatile int16_t motor_speed;
 extern volatile uint16_t acc_current_adc;
 extern volatile uint16_t acc_current_ref_adc;
-extern volatile uint16_t pack_voltage;
+extern volatile int16_t pack_voltage;
+extern volatile uint8_t soc;
 
 uint16_t get_max_torque(uint32_t max_power);
 uint32_t get_max_power();
@@ -164,7 +165,7 @@ static bool accumulator_power_draw_exceeded() {
 	return acc_current_amps*acc_voltage_volt >= MAX_POWER_ACCUMULATOR_W;
 }
 
-uint16_t requested_throttle(){
+int16_t requested_throttle(){
     uint32_t max_power = get_max_power();
     uint16_t max_torque = get_max_torque(max_power);
 
@@ -183,6 +184,24 @@ uint16_t requested_throttle(){
     if(is_button_enabled(TC_BUTTON) && (torque_req > TC_torque_req)){
 		torque_req = TC_torque_req;
 	}
+
+    // TODO make this code better, this is just for testing with regen
+    // regenerative braking:
+    // EV.3.3.3 The powertrain must not regenerate energy when vehicle speed is between 0 and 5 km/hr
+    float car_speed_mph = abs(motor_speed) * 0.016349; // 0.016349 comes from (60 * pi * tire_diameter) / (FDR * 63360) where 63360 is conversion factor
+
+    // 5 km/hr is approx 3.106 mph
+    if (throttle1.percent < DEADZONE_PERCENTAGE && car_speed_mph > 3.106 && soc < 95) { // TODO can tune, right now less than 5% = regen brake instead
+    	// negative torque request for regen braking
+    	float current_term = 40.5; // 40.5 amps
+    	float acc_voltage_volt = pack_voltage * 0.018 + 180;
+    	float voltage_term = abs(acc_voltage_volt);
+    	float rpm_term = abs(motor_speed);
+    	int16_t regen_torque = (int16_t)( (launch_control_param / 100.0) * -1*voltage_term * current_term / (0.10472 * rpm_term) );
+    	// TODO TEMPORARY: uses launch control knob to change intrusiveness of regen braking
+    	return clamp(regen_torque*10, -90*10, 0); // max 90 Nm on regen
+    }
+
 
     return (uint16_t)torque_req;
 }
