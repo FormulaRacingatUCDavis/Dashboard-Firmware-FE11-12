@@ -40,5 +40,6 @@
 // leave some gap, use a number lower than 72kW
 #define MAX_POWER_MOTOR_W 60000
 #define MAX_POWER_ACCUMULATOR_W 70000
+#define SMOOTHING_POWER_THRESHOLD_W 60000
 
 #endif
