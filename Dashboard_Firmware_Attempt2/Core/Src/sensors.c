@@ -333,7 +333,7 @@ void add_deadzone(CALIBRATED_SENSOR_t* sensor, uint16_t deadzone_percentage){
 	sensor->range -= deadzone;
 }
 
-uint16_t clamp(uint16_t in, uint16_t min, uint16_t max){
+int16_t clamp(int16_t in, int16_t min, int16_t max){
     if(in > max) return max;
     if(in < min) return min;
     return in;

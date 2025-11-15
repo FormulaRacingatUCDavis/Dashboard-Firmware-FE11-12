@@ -69,7 +69,7 @@ bool brake_mashed();
 void temp_attenuate();
 int16_t requested_throttle();
 
-uint16_t clamp(uint16_t in, uint16_t min, uint16_t max);
+int16_t clamp(int16_t in, int16_t min, int16_t max);
 void update_percent(CALIBRATED_SENSOR_t* sensor);
 void update_minmax(CALIBRATED_SENSOR_t* sensor);
 void add_apps_deadzone();
