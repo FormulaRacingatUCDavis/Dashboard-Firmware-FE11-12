@@ -181,7 +181,7 @@ int16_t requested_throttle(){
 
 		uint32_t interval_ms = HAL_GetTick() - smoothing_start_tick;
 
-		if (interval_ms > SMOOTHING_DOWN_TIME_MS) { // if we have spend enough time smoothing down, can start smoothing up
+		if (interval_ms > SMOOTHING_DOWN_TIME_MS) { // if we have spent enough time smoothing down, can start smoothing up
 			smoothing_start_tick = HAL_GetTick();
 			smoothing_flag = SMOOTHING_STATE_UP;
 		} else {  // else, smooth down to 50kW (SMOOTHING_POWER_DELTA_W is amount to decrease from max power, i.e. 10kW)
@@ -192,7 +192,7 @@ int16_t requested_throttle(){
 
 		uint32_t interval_ms = HAL_GetTick() - smoothing_start_tick;
 
-		if (interval_ms > SMOOTHING_UP_TIME_MS) { // if we are down smoothing up, return to normal operation
+		if (interval_ms > SMOOTHING_UP_TIME_MS) { // if we are done smoothing up, return to normal operation
 			smoothing_flag = SMOOTHING_STATE_NONE;
 		} else { // else slowly allow more power
 			max_power = max_power - ( 1.0 - ((float)interval_ms / (float)SMOOTHING_DOWN_TIME_MS) ) * SMOOTHING_POWER_DELTA_W;
