@@ -391,15 +391,22 @@ void can_clear_MC_fault(CAN_HandleTypeDef *hcan) {
 }
 
 void can_tx_knobs(CAN_HandleTypeDef *hcan) {
-	uint16_t torque_limit_raw = (uint16_t)(torque_percentage / 100 * 4095);
-	uint16_t launch_control_param_raw = (uint16_t)(launch_control_param / 100 * 4095);
+//	uint16_t torque_limit_raw = (uint16_t)(torque_percentage / 100 * 4095);
+//	uint16_t launch_control_param_raw = (uint16_t)(launch_control_param / 100 * 4095);
+	uint8_t practice_mode_bit = 0 << 4; // TODO this bit can be zero if driver practice mode is enable
+	uint8_t debug_mode_bit = is_button_enabled(DEBUG_BUTTON) << 3;
+	uint8_t tc_button_bit = is_button_enabled(TC_BUTTON) << 2;
+	uint8_t marker_button_bit = is_button_enabled(MARKER_BUTTON) << 1;
+	uint8_t overtake_button_bit = is_button_enabled(OVERTAKE_BUTTON);
+	uint8_t button_flags = 0 | practice_mode_bit | debug_mode_bit | tc_button_bit | marker_button_bit | overtake_button_bit;
 		uint8_t data[8] = {
 //			torque_limit_raw >> 8,
 //			torque_limit_raw & 0xFF,
 //			launch_control_param_raw >> 8,
 //			launch_control_param_raw & 0xFF,
-				0,0,0,0,
-			is_button_enabled(DEBUG_BUTTON)
+				(uint8_t)torque_percentage,
+				(uint8_t)launch_control_param,
+				button_flags
 		};
 		CAN_Send(hcan, 0x501, data, 8);
 }
